@@ -4,51 +4,24 @@ import { useState } from 'react'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import { useRouter } from 'next/navigation'
+import { loginAdmin } from '../admin/auth'
 
 export default function LoginPage() {
-  const [formData, setFormData] = useState({
-    email: '',
-    password: ''
-  })
-  const [showPassword, setShowPassword] = useState(false)
+  const router = useRouter()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.email || !formData.password) {
-      alert('이메일과 비밀번호를 입력해주세요.')
-      return
-    }
-    
-    // 관리자 계정 확인 (실제로는 서버에서 검증)
-    if (formData.email === 'admin@infinitygym.com' && formData.password === 'admin123') {
-      // 로그인 상태 저장
-      localStorage.setItem('adminLoggedIn', 'true')
-      localStorage.setItem('adminUser', formData.email)
-      
-      // 로그인 상태 변경 이벤트 발생
-      window.dispatchEvent(new Event('loginStatusChanged'))
-      
-      alert('관리자로 로그인되었습니다!')
-      window.location.href = '/admin'
-    } else if (formData.email && formData.password) {
-      // 일반 사용자 로그인
-      localStorage.setItem('adminLoggedIn', 'true')
-      localStorage.setItem('adminUser', formData.email)
-      
-      // 로그인 상태 변경 이벤트 발생
-      window.dispatchEvent(new Event('loginStatusChanged'))
-      
-      alert('로그인이 성공적으로 완료되었습니다!')
-      window.location.href = '/'
-    }
-  }
+    setError('')
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }))
+    if (loginAdmin(email, password)) {
+      router.push('/admin')
+    } else {
+      setError('이메일 또는 비밀번호가 올바르지 않습니다.')
+    }
   }
 
   return (
@@ -72,8 +45,8 @@ export default function LoginPage() {
                 <input
                   type="email"
                   name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="이메일을 입력해주세요"
                   required
@@ -87,20 +60,20 @@ export default function LoginPage() {
                 </label>
                 <div className="relative">
                   <input
-                    type={showPassword ? 'text' : 'password'}
+                    type="password"
                     name="password"
-                    value={formData.password}
-                    onChange={handleInputChange}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10"
                     placeholder="비밀번호를 입력해주세요"
                     required
                   />
                   <button
                     type="button"
-                    onClick={() => setShowPassword(!showPassword)}
+                    onClick={() => {}}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
                   >
-                    {showPassword ? '🙈' : '👁️'}
+                    👁️
                   </button>
                 </div>
               </div>
@@ -160,6 +133,12 @@ export default function LoginPage() {
                 </Link>
               </p>
             </div>
+
+            {error && (
+              <div className="text-red-600 text-sm text-center">
+                {error}
+              </div>
+            )}
           </div>
 
           {/* 테스트 계정 안내 */}
