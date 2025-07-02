@@ -4,6 +4,7 @@ import AISystemSection from '@/components/AISystemSection'
 import ProgramSection from '@/components/ProgramSection'
 import ReviewSection from '@/components/ReviewSection'
 import PortfolioSection from '@/components/PortfolioSection'
+import BookingStatusSection from '@/components/BookingStatusSection'
 import Footer from '@/components/Footer'
 
 export default function Home() {
@@ -13,6 +14,7 @@ export default function Home() {
       <HeroSection />
       <AISystemSection />
       <ProgramSection />
+      <BookingStatusSection />
       <PortfolioSection />
       <ReviewSection />
       <Footer />

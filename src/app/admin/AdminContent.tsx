@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
 export default function AdminContent() {
@@ -90,6 +90,14 @@ export default function AdminContent() {
     }
   ])
 
+  const [todayReservations, setTodayReservations] = useState(0)
+
+  useEffect(() => {
+    const today = new Date().toISOString().split('T')[0]
+    const todayCount = reservations.filter(r => r.date === today).length
+    setTodayReservations(todayCount)
+  }, [reservations])
+
   const updateReservationStatus = (id: number, newStatus: string) => {
     setReservations(prev => 
       prev.map(res => 
@@ -128,10 +136,18 @@ export default function AdminContent() {
 
   const renderDashboard = () => (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-6 gap-6">
+        <div className="bg-white p-6 rounded-lg border">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">총 예약</h3>
+          <p className="text-3xl font-bold text-purple-600">{reservations.length}</p>
+        </div>
+        <div className="bg-white p-6 rounded-lg border">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">총 등록수</h3>
+          <p className="text-3xl font-bold text-indigo-600">{members.length}</p>
+        </div>
         <div className="bg-white p-6 rounded-lg border">
           <h3 className="text-lg font-semibold text-gray-900 mb-2">오늘 예약</h3>
-          <p className="text-3xl font-bold text-blue-600">{reservations.length}</p>
+          <p className="text-3xl font-bold text-blue-600">{todayReservations}</p>
         </div>
         <div className="bg-white p-6 rounded-lg border">
           <h3 className="text-lg font-semibold text-gray-900 mb-2">대기 중</h3>
@@ -140,12 +156,14 @@ export default function AdminContent() {
           </p>
         </div>
         <div className="bg-white p-6 rounded-lg border">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">총 회원</h3>
-          <p className="text-3xl font-bold text-green-600">{members.length}</p>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">확정된 예약</h3>
+          <p className="text-3xl font-bold text-green-600">
+            {reservations.filter(r => r.status === 'confirmed').length}
+          </p>
         </div>
         <div className="bg-white p-6 rounded-lg border">
           <h3 className="text-lg font-semibold text-gray-900 mb-2">신규 리뷰</h3>
-          <p className="text-3xl font-bold text-purple-600">
+          <p className="text-3xl font-bold text-orange-600">
             {reviews.filter(r => r.status === 'pending').length}
           </p>
         </div>
