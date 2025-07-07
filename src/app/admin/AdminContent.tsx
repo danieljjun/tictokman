@@ -298,91 +298,107 @@ export default function AdminContent() {
         setIsUploading(true)
         setUploadError(null)
 
-        // 파일 업로드 처리
         const file = formData.get('file') as File
-        if (!file || file.size === 0) {
-          throw new Error('파일을 선택해주세요.')
+        const title = formData.get('title') as string
+        const description = formData.get('description') as string
+
+        // 최소한 하나의 필드는 입력되어야 함
+        if ((!file || file.size === 0) && !title.trim() && !description.trim()) {
+          throw new Error('파일, 제목, 설명 중 하나 이상을 입력해주세요.')
         }
 
-        // 파일 크기 검증 (50MB)
-        if (file.size > 50 * 1024 * 1024) {
-          throw new Error('파일 크기는 50MB를 초과할 수 없습니다.')
-        }
+        let bannerUrl = ''
+        let bannerType: 'image' | 'video' = 'image'
 
-        // 파일 타입 검증
-        const fileType = file.type
-        if (!fileType.startsWith('image/') && !fileType.startsWith('video/')) {
-          throw new Error('이미지 또는 비디오 파일만 업로드 가능합니다.')
-        }
-
-        // 비디오 파일 검증
-        if (fileType.startsWith('video/')) {
-          const allowedVideoTypes = ['video/mp4', 'video/webm', 'video/quicktime']
-          if (!allowedVideoTypes.includes(fileType)) {
-            throw new Error('MP4, WebM, MOV 형식의 비디오만 업로드 가능합니다.')
+        // 파일이 있는 경우 업로드 처리
+        if (file && file.size > 0) {
+          // 파일 크기 검증 (50MB)
+          if (file.size > 50 * 1024 * 1024) {
+            throw new Error('파일 크기는 50MB를 초과할 수 없습니다.')
           }
-        }
 
-        // 이미지 파일 검증
-        if (fileType.startsWith('image/')) {
-          const allowedImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
-          if (!allowedImageTypes.includes(fileType)) {
-            throw new Error('JPG, PNG, GIF, WebP 형식의 이미지만 업로드 가능합니다.')
+          // 파일 타입 검증
+          const fileType = file.type
+          if (!fileType.startsWith('image/') && !fileType.startsWith('video/')) {
+            throw new Error('이미지 또는 비디오 파일만 업로드 가능합니다.')
           }
-        }
 
-        const uploadData = new FormData()
-        uploadData.append('file', file)
-
-        console.log('Uploading file:', {
-          name: file.name,
-          type: file.type,
-          size: file.size
-        })
-
-        const response = await fetch('/api/upload', {
-          method: 'POST',
-          body: uploadData,
-        })
-
-        console.log('Response status:', response.status)
-        console.log('Response headers:', Object.fromEntries(response.headers.entries()))
-
-        if (!response.ok) {
-          const errorText = await response.text()
-          console.error('Server error response:', errorText)
-          try {
-            const errorJson = JSON.parse(errorText)
-            throw new Error(errorJson.error || '파일 업로드에 실패했습니다.')
-          } catch (e) {
-            if (response.status === 413) {
-              throw new Error('파일 크기가 너무 큽니다. 50MB 이하의 파일을 업로드해주세요.')
+          // 비디오 파일 검증
+          if (fileType.startsWith('video/')) {
+            const allowedVideoTypes = ['video/mp4', 'video/webm', 'video/quicktime']
+            if (!allowedVideoTypes.includes(fileType)) {
+              throw new Error('MP4, WebM, MOV 형식의 비디오만 업로드 가능합니다.')
             }
-            if (response.status === 500) {
-              throw new Error('서버 내부 오류가 발생했습니다. 잠시 후 다시 시도해주세요.')
-            }
-            throw new Error('서버 오류: ' + response.status + ' ' + response.statusText)
+            bannerType = 'video'
           }
-        }
 
-        const result = await response.json()
-        console.log('Upload response:', result)
+          // 이미지 파일 검증
+          if (fileType.startsWith('image/')) {
+            const allowedImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+            if (!allowedImageTypes.includes(fileType)) {
+              throw new Error('JPG, PNG, GIF, WebP 형식의 이미지만 업로드 가능합니다.')
+            }
+            bannerType = 'image'
+          }
 
-        if (!result.success) {
-          throw new Error(result.error || '파일 업로드에 실패했습니다.')
-        }
+          const uploadData = new FormData()
+          uploadData.append('file', file)
 
-        if (!result.url) {
-          throw new Error('업로드된 파일의 URL을 받지 못했습니다.')
+          console.log('Uploading file:', {
+            name: file.name,
+            type: file.type,
+            size: file.size
+          })
+
+          const response = await fetch('/api/upload', {
+            method: 'POST',
+            body: uploadData,
+          })
+
+          console.log('Response status:', response.status)
+          console.log('Response headers:', Object.fromEntries(response.headers.entries()))
+
+          if (!response.ok) {
+            const errorText = await response.text()
+            console.error('Server error response:', errorText)
+            try {
+              const errorJson = JSON.parse(errorText)
+              throw new Error(errorJson.error || '파일 업로드에 실패했습니다.')
+            } catch (e) {
+              if (response.status === 413) {
+                throw new Error('파일 크기가 너무 큽니다. 50MB 이하의 파일을 업로드해주세요.')
+              }
+              if (response.status === 500) {
+                throw new Error('서버 내부 오류가 발생했습니다. 잠시 후 다시 시도해주세요.')
+              }
+              throw new Error('서버 오류: ' + response.status + ' ' + response.statusText)
+            }
+          }
+
+          const result = await response.json()
+          console.log('Upload response:', result)
+
+          if (!result.success) {
+            throw new Error(result.error || '파일 업로드에 실패했습니다.')
+          }
+
+          if (!result.url) {
+            throw new Error('업로드된 파일의 URL을 받지 못했습니다.')
+          }
+
+          bannerUrl = result.url
+        } else {
+          // 파일이 없는 경우 기본 배너 이미지 사용
+          bannerUrl = '/banner-default.jpg'
         }
 
         // 새 배너 생성
         const newBanner: BannerItem = {
           id: Date.now(),
-          type: file.type.startsWith('video/') ? 'video' : 'image',
-          url: result.url,
-          title: formData.get('title') as string,
-          description: formData.get('description') as string
+          type: bannerType,
+          url: bannerUrl,
+          title: title.trim() || '제목 없음',
+          description: description.trim() || '설명 없음'
         }
 
         console.log('Creating new banner:', newBanner)
@@ -396,7 +412,7 @@ export default function AdminContent() {
         
       } catch (error) {
         console.error('Upload error:', error)
-        let errorMessage = '파일 업로드 중 오류가 발생했습니다.'
+        let errorMessage = '배너 추가 중 오류가 발생했습니다.'
         
         if (error instanceof Error) {
           errorMessage = error.message
@@ -442,7 +458,7 @@ export default function AdminContent() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-gray-700 text-sm font-bold mb-2">
-              파일 업로드 (이미지 또는 비디오)
+              파일 업로드 (이미지 또는 비디오) <span className="text-gray-500 font-normal">(선택사항)</span>
             </label>
             <input
               ref={fileInputRef}
@@ -450,7 +466,6 @@ export default function AdminContent() {
               name="file"
               accept="image/*,video/*"
               className="w-full"
-              required
             />
             <p className="text-sm text-gray-500 mt-1">
               지원 형식: JPG, PNG, GIF, WebP, MP4, WebM, MOV (최대 50MB)
@@ -459,25 +474,25 @@ export default function AdminContent() {
 
           <div>
             <label className="block text-gray-700 text-sm font-bold mb-2">
-              제목
+              제목 <span className="text-gray-500 font-normal">(선택사항)</span>
             </label>
             <input
               type="text"
               name="title"
+              placeholder="배너 제목을 입력하세요"
               className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              required
             />
           </div>
 
           <div>
             <label className="block text-gray-700 text-sm font-bold mb-2">
-              설명
+              설명 <span className="text-gray-500 font-normal">(선택사항)</span>
             </label>
             <textarea
               name="description"
+              placeholder="배너 설명을 입력하세요"
               className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
               rows={3}
-              required
             />
           </div>
 
@@ -493,7 +508,7 @@ export default function AdminContent() {
                 isUploading ? 'opacity-50 cursor-not-allowed' : ''
               }`}
             >
-              {isUploading ? '업로드 중...' : '배너 추가'}
+              {isUploading ? '처리 중...' : '배너 추가'}
             </button>
           </div>
         </form>
