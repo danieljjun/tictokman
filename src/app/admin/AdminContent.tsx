@@ -821,6 +821,7 @@ export default function AdminContent() {
   // 멤버십 관리 섹션
   const PaymentProgramsSection = () => {
     const [showAddForm, setShowAddForm] = useState(false)
+    const [editingProgram, setEditingProgram] = useState<PaymentSettings['programs'][0] | null>(null)
     const [newProgram, setNewProgram] = useState({
       name: '',
       price: 0,
@@ -856,6 +857,27 @@ export default function AdminContent() {
       }
     }
 
+    const handleEditProgram = (e: React.FormEvent) => {
+      e.preventDefault()
+      if (editingProgram && editingProgram.name && editingProgram.price > 0) {
+        const updatedSettings = {
+          ...tempPaymentSettings,
+          programs: tempPaymentSettings.programs.map(program => 
+            program.id === editingProgram.id ? editingProgram : program
+          )
+        }
+        setTempPaymentSettings(updatedSettings)
+        setPaymentSettings(updatedSettings)
+        localStorage.setItem('paymentSettings', JSON.stringify(updatedSettings))
+        
+        setEditingProgram(null)
+      }
+    }
+
+    const handleCancelEdit = () => {
+      setEditingProgram(null)
+    }
+
     return (
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex justify-between items-center mb-6">
@@ -865,7 +887,10 @@ export default function AdminContent() {
           </div>
           <button
             onClick={() => setShowAddForm(!showAddForm)}
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+            disabled={editingProgram !== null}
+            className={`bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ${
+              editingProgram !== null ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
           >
             {showAddForm ? '취소' : '새 멤버십 추가'}
           </button>
@@ -954,10 +979,107 @@ export default function AdminContent() {
           </form>
         )}
 
+        {/* 멤버십 수정 폼 */}
+        {editingProgram && (
+          <form onSubmit={handleEditProgram} className="mb-8 p-4 border rounded-lg bg-blue-50">
+            <h3 className="text-lg font-semibold mb-4 text-blue-800">멤버십 수정</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-gray-700 text-sm font-bold mb-2">
+                  멤버십명
+                </label>
+                <input
+                  type="text"
+                  value={editingProgram.name}
+                  onChange={(e) => setEditingProgram({...editingProgram, name: e.target.value})}
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  placeholder="예: 기본 멤버십"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-gray-700 text-sm font-bold mb-2">
+                  가격 (원)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={editingProgram.price}
+                  onChange={(e) => setEditingProgram({...editingProgram, price: Number(e.target.value)})}
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-gray-700 text-sm font-bold mb-2">
+                  기간
+                </label>
+                <input
+                  type="text"
+                  value={editingProgram.duration}
+                  onChange={(e) => setEditingProgram({...editingProgram, duration: e.target.value})}
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  placeholder="예: 1개월, 3개월, 1회"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-gray-700 text-sm font-bold mb-2">
+                  활성화
+                </label>
+                <label className="flex items-center space-x-3">
+                  <input
+                    type="checkbox"
+                    checked={editingProgram.active}
+                    onChange={(e) => setEditingProgram({...editingProgram, active: e.target.checked})}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-gray-700">활성화</span>
+                </label>
+              </div>
+            </div>
+            <div className="mt-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2">
+                제공 서비스 (쉼표로 구분)
+              </label>
+              <textarea
+                value={editingProgram.description}
+                onChange={(e) => setEditingProgram({...editingProgram, description: e.target.value})}
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                rows={3}
+                placeholder="예: 기본 운동기구 이용, PCU 시스템 이용, 샤워시설 이용"
+                required
+              />
+            </div>
+            <div className="flex justify-end mt-4 space-x-2">
+              <button
+                type="button"
+                onClick={handleCancelEdit}
+                className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+              >
+                취소
+              </button>
+              <button
+                type="submit"
+                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+              >
+                수정 완료
+              </button>
+            </div>
+          </form>
+        )}
+
         {/* 멤버십 목록 */}
         <div className="space-y-4">
           {tempPaymentSettings.programs.map((program) => (
-            <div key={program.id} className="border rounded-lg p-4">
+            <div 
+              key={program.id} 
+              className={`border rounded-lg p-4 ${
+                editingProgram && editingProgram.id === program.id 
+                  ? 'border-blue-500 bg-blue-50' 
+                  : 'border-gray-200'
+              }`}
+            >
               <div className="flex justify-between items-start">
                 <div className="flex-1">
                   <div className="flex items-center space-x-3 mb-2">
@@ -975,6 +1097,17 @@ export default function AdminContent() {
                   </div>
                 </div>
                 <div className="flex space-x-2">
+                  <button
+                    onClick={() => setEditingProgram(program)}
+                    disabled={editingProgram !== null && editingProgram.id !== program.id}
+                    className={`px-3 py-1 rounded text-sm ${
+                      editingProgram !== null && editingProgram.id !== program.id
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
+                    }`}
+                  >
+                    수정
+                  </button>
                   <button
                     onClick={() => {
                       const updatedPrograms = tempPaymentSettings.programs.map(p => 
