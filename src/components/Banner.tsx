@@ -28,9 +28,20 @@ export default function Banner() {
   useEffect(() => {
     // localStorage에서 배너 설정 로드
     const loadSettings = () => {
-      const savedSettings = localStorage.getItem('bannerSettings')
-      if (savedSettings) {
-        setSettings(JSON.parse(savedSettings))
+      try {
+        const savedSettings = localStorage.getItem('bannerSettings')
+        console.log('Loading banner settings from localStorage:', savedSettings)
+        
+        if (savedSettings) {
+          const parsedSettings = JSON.parse(savedSettings)
+          console.log('Parsed banner settings:', parsedSettings)
+          console.log('Number of banners:', parsedSettings.items?.length || 0)
+          setSettings(parsedSettings)
+        } else {
+          console.log('No saved banner settings found')
+        }
+      } catch (error) {
+        console.error('Error loading banner settings:', error)
       }
     }
 
@@ -39,6 +50,7 @@ export default function Banner() {
     // storage 이벤트 리스너 추가
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'bannerSettings') {
+        console.log('Storage changed, reloading banner settings')
         loadSettings()
       }
     }
@@ -63,7 +75,12 @@ export default function Banner() {
     return () => clearInterval(interval)
   }, [settings.interval, settings.items.length])
 
+  console.log('Banner component render - settings:', settings)
+  console.log('Current index:', currentIndex)
+  console.log('Total items:', settings.items.length)
+
   if (settings.items.length === 0) {
+    console.log('No banners to display')
     return (
       <div 
         className="w-full bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center"
@@ -75,6 +92,7 @@ export default function Banner() {
   }
 
   const currentItem = settings.items[currentIndex]
+  console.log('Current banner item:', currentItem)
 
   const goToPrevious = () => {
     setCurrentIndex(current => 
@@ -137,17 +155,23 @@ export default function Banner() {
         )
       )}
       {currentItem.type === 'video' && currentItem.url && (
-        <video
-          src={currentItem.url}
-          autoPlay
-          muted
-          loop
-          playsInline
-          className="absolute inset-0 w-full h-full object-cover"
-          onError={(e) => {
-            console.error('Video loading error:', e)
-          }}
-        />
+        <>
+          {console.log('Rendering video banner:', currentItem.url)}
+          <video
+            src={currentItem.url}
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover"
+            onError={(e) => {
+              console.error('Video loading error:', e)
+            }}
+            onLoadStart={() => console.log('Video loading started')}
+            onLoadedData={() => console.log('Video data loaded successfully')}
+            onCanPlay={() => console.log('Video can play')}
+          />
+        </>
       )}
 
       {/* 배너 텍스트 */}

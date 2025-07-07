@@ -240,15 +240,32 @@ export default function AdminContent() {
   // 새 배너 추가 시 자동 저장
   const handleAddBanner = (newBanner: BannerItem) => {
     console.log('handleAddBanner called with:', newBanner)
+    
+    // 기존 배너 목록에 새 배너 추가
+    const updatedItems = [...tempBannerSettings.items, newBanner]
     const updatedSettings = {
       ...tempBannerSettings,
-      items: [...tempBannerSettings.items, { ...newBanner, id: Date.now() }]
+      items: updatedItems
     }
+    
     console.log('Updated settings:', updatedSettings)
+    console.log('Total banners:', updatedItems.length)
+    
+    // 상태 업데이트
     setTempBannerSettings(updatedSettings)
     setBannerSettings(updatedSettings)
-    localStorage.setItem('bannerSettings', JSON.stringify(updatedSettings))
-    console.log('Banner saved to localStorage')
+    
+    // localStorage에 저장
+    try {
+      localStorage.setItem('bannerSettings', JSON.stringify(updatedSettings))
+      console.log('Banner saved to localStorage successfully')
+      
+      // 저장 확인
+      const savedData = localStorage.getItem('bannerSettings')
+      console.log('Saved data verification:', savedData ? JSON.parse(savedData) : 'null')
+    } catch (error) {
+      console.error('Error saving to localStorage:', error)
+    }
   }
 
   // 배너 수정 함수 추가
