@@ -239,13 +239,16 @@ export default function AdminContent() {
 
   // 새 배너 추가 시 자동 저장
   const handleAddBanner = (newBanner: BannerItem) => {
+    console.log('handleAddBanner called with:', newBanner)
     const updatedSettings = {
       ...tempBannerSettings,
       items: [...tempBannerSettings.items, { ...newBanner, id: Date.now() }]
     }
+    console.log('Updated settings:', updatedSettings)
     setTempBannerSettings(updatedSettings)
     setBannerSettings(updatedSettings)
     localStorage.setItem('bannerSettings', JSON.stringify(updatedSettings))
+    console.log('Banner saved to localStorage')
   }
 
   // 배너 수정 함수 추가
@@ -419,6 +422,8 @@ export default function AdminContent() {
         }
 
         console.log('Creating new banner:', newBanner)
+        console.log('Banner type:', bannerType)
+        console.log('Banner URL:', bannerUrl)
 
         handleAddBanner(newBanner)
         form.reset()

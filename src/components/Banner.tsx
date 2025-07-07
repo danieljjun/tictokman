@@ -136,7 +136,7 @@ export default function Banner() {
           />
         )
       )}
-      {currentItem.type === 'video' && (
+      {currentItem.type === 'video' && currentItem.url && (
         <video
           src={currentItem.url}
           autoPlay
@@ -144,18 +144,20 @@ export default function Banner() {
           loop
           playsInline
           className="absolute inset-0 w-full h-full object-cover"
+          onError={(e) => {
+            console.error('Video loading error:', e)
+          }}
         />
       )}
 
       {/* 배너 텍스트 */}
       <div className={`absolute inset-0 flex items-center justify-center ${
-        currentItem.url !== '/banner-default.jpg' && !currentItem.url.startsWith('data:') ? 'bg-black/30' : 
-        currentItem.url.startsWith('data:') ? 'bg-black/30' : ''
+        (currentItem.url !== '/banner-default.jpg' && currentItem.url) || currentItem.url.startsWith('data:') ? 'bg-black/30' : ''
       }`}>
         <div className="text-center max-w-4xl mx-auto px-4">
           {currentItem.title && (
             <h2 className={`text-4xl md:text-6xl font-bold mb-6 ${
-              currentItem.url !== '/banner-default.jpg' || currentItem.url.startsWith('data:') ? 'text-white' : 'text-gray-900'
+              (currentItem.url !== '/banner-default.jpg' && currentItem.url) || currentItem.url.startsWith('data:') ? 'text-white' : 'text-gray-900'
             }`}>
               {currentItem.title.split(' ').map((word, i) => (
                 <span key={i} className={word === 'Total' || word === 'Check' ? 'text-blue-600' : ''}>
@@ -166,7 +168,7 @@ export default function Banner() {
           )}
           {currentItem.description && (
             <p className={`text-xl mb-8 whitespace-pre-line ${
-              currentItem.url !== '/banner-default.jpg' || currentItem.url.startsWith('data:') ? 'text-white' : 'text-gray-600'
+              (currentItem.url !== '/banner-default.jpg' && currentItem.url) || currentItem.url.startsWith('data:') ? 'text-white' : 'text-gray-600'
             }`}>
               {currentItem.description}
             </p>
