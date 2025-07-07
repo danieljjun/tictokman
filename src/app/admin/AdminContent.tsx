@@ -129,50 +129,34 @@ export default function AdminContent() {
     programs: [
       {
         id: 1,
-        name: '재활운동',
+        name: '기본 멤버십',
         price: 150000,
-        description: '부상 후 회복을 위한 전문 재활 프로그램',
-        duration: '3개월',
+        description: '기본 운동기구 이용, PCU 시스템 이용, 샤워시설 이용',
+        duration: '1개월',
         active: true
       },
       {
         id: 2,
-        name: '자세교정',
-        price: 120000,
-        description: '거북목, 척추측만증 등 자세 교정 프로그램',
-        duration: '2개월',
+        name: '프리미엄 멤버십',
+        price: 400000,
+        description: '모든 운동기구 이용, AI 분석 시스템, 개인 트레이너 월 2회, 영양 상담',
+        duration: '3개월',
         active: true
       },
       {
         id: 3,
-        name: '다이어트',
-        price: 180000,
-        description: '체계적인 다이어트 및 체중 관리 프로그램',
-        duration: '3개월',
+        name: 'VIP 멤버십',
+        price: 800000,
+        description: '모든 시설 무제한, AI 분석 시스템, 개인 트레이너 주 2회, 영양 상담, 마사지 서비스',
+        duration: '6개월',
         active: true
       },
       {
         id: 4,
-        name: '벌크업',
-        price: 200000,
-        description: '근육량 증가를 위한 전문 훈련 프로그램',
-        duration: '4개월',
-        active: true
-      },
-      {
-        id: 5,
-        name: '산후관리',
-        price: 160000,
-        description: '출산 후 체형 회복 및 건강 관리 프로그램',
-        duration: '3개월',
-        active: true
-      },
-      {
-        id: 6,
-        name: '웨딩 PT',
-        price: 140000,
-        description: '웨딩을 위한 특별한 피트니스 프로그램',
-        duration: '2개월',
+        name: '개인 PT 세션',
+        price: 80000,
+        description: '1:1 개인 트레이닝, AI 자세 분석, 운동 프로그램 설계',
+        duration: '1회',
         active: true
       }
     ],
@@ -834,7 +818,7 @@ export default function AdminContent() {
     )
   }
 
-  // 결제 프로그램 관리 섹션
+  // 멤버십 관리 섹션
   const PaymentProgramsSection = () => {
     const [showAddForm, setShowAddForm] = useState(false)
     const [newProgram, setNewProgram] = useState({
@@ -875,29 +859,33 @@ export default function AdminContent() {
     return (
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold">결제 프로그램 관리</h2>
+          <div>
+            <h2 className="text-2xl font-bold">멤버십 관리</h2>
+            <p className="text-gray-600 mt-1">결제 페이지에서 고객이 선택할 수 있는 멤버십을 관리합니다.</p>
+          </div>
           <button
             onClick={() => setShowAddForm(!showAddForm)}
             className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
           >
-            {showAddForm ? '취소' : '새 프로그램 추가'}
+            {showAddForm ? '취소' : '새 멤버십 추가'}
           </button>
         </div>
 
-        {/* 새 프로그램 추가 폼 */}
+        {/* 새 멤버십 추가 폼 */}
         {showAddForm && (
           <form onSubmit={handleAddProgram} className="mb-8 p-4 border rounded-lg bg-gray-50">
-            <h3 className="text-lg font-semibold mb-4">새 프로그램 추가</h3>
+            <h3 className="text-lg font-semibold mb-4">새 멤버십 추가</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-gray-700 text-sm font-bold mb-2">
-                  프로그램명
+                  멤버십명
                 </label>
                 <input
                   type="text"
                   value={newProgram.name}
                   onChange={(e) => setNewProgram({...newProgram, name: e.target.value})}
                   className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  placeholder="예: 기본 멤버십"
                   required
                 />
               </div>
@@ -923,7 +911,7 @@ export default function AdminContent() {
                   value={newProgram.duration}
                   onChange={(e) => setNewProgram({...newProgram, duration: e.target.value})}
                   className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                  placeholder="예: 3개월"
+                  placeholder="예: 1개월, 3개월, 1회"
                   required
                 />
               </div>
@@ -944,13 +932,14 @@ export default function AdminContent() {
             </div>
             <div className="mt-4">
               <label className="block text-gray-700 text-sm font-bold mb-2">
-                설명
+                제공 서비스 (쉼표로 구분)
               </label>
               <textarea
                 value={newProgram.description}
                 onChange={(e) => setNewProgram({...newProgram, description: e.target.value})}
                 className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                 rows={3}
+                placeholder="예: 기본 운동기구 이용, PCU 시스템 이용, 샤워시설 이용"
                 required
               />
             </div>
@@ -959,13 +948,13 @@ export default function AdminContent() {
                 type="submit"
                 className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
               >
-                프로그램 추가
+                멤버십 추가
               </button>
             </div>
           </form>
         )}
 
-        {/* 프로그램 목록 */}
+        {/* 멤버십 목록 */}
         <div className="space-y-4">
           {tempPaymentSettings.programs.map((program) => (
             <div key={program.id} className="border rounded-lg p-4">

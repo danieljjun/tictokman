@@ -14,7 +14,48 @@ export default function PaymentPage() {
     phone: ''
   })
 
-  const plans = [
+  // 관리자 설정에서 멤버십 정보 불러오기
+  const loadMembershipSettings = () => {
+    const savedPaymentSettings = localStorage.getItem('paymentSettings')
+    if (savedPaymentSettings) {
+      try {
+        const paymentSettings = JSON.parse(savedPaymentSettings)
+        if (paymentSettings.programs && paymentSettings.programs.length > 0) {
+          // 활성화된 멤버십만 필터링
+          const activePrograms = paymentSettings.programs.filter((program: any) => program.active)
+          
+          // 결제 페이지 형식에 맞게 변환
+          const formattedPlans = activePrograms.map((program: any, index: number) => ({
+            id: program.id.toString(),
+            name: program.name,
+            price: program.price,
+            duration: program.duration,
+            features: program.description.split(',').map((feature: string) => feature.trim())
+          }))
+          
+          setPlans(formattedPlans)
+        }
+      } catch (error) {
+        console.error('멤버십 설정 로드 중 오류:', error)
+      }
+    }
+  }
+
+  useEffect(() => {
+    loadMembershipSettings()
+
+    // storage 이벤트 리스너 추가 (관리자 페이지에서 설정 변경 시 실시간 업데이트)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'paymentSettings') {
+        loadMembershipSettings()
+      }
+    }
+
+    window.addEventListener('storage', handleStorageChange)
+    return () => window.removeEventListener('storage', handleStorageChange)
+  }, [])
+
+  const [plans, setPlans] = useState([
     {
       id: 'basic',
       name: '기본 멤버십',
@@ -43,7 +84,7 @@ export default function PaymentPage() {
       duration: '1회',
       features: ['1:1 개인 트레이닝', 'AI 자세 분석', '운동 프로그램 설계']
     }
-  ]
+  ])
 
   const handlePayment = async () => {
     if (!selectedPlan || !customerInfo.name || !customerInfo.email) {
