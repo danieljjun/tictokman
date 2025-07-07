@@ -248,6 +248,20 @@ export default function AdminContent() {
     localStorage.setItem('bannerSettings', JSON.stringify(updatedSettings))
   }
 
+  // 배너 수정 함수 추가
+  const handleUpdateBanner = (id: number, updatedBanner: BannerItem) => {
+    const updatedItems = tempBannerSettings.items.map(item => 
+      item.id === id ? { ...updatedBanner, id } : item
+    )
+    const updatedSettings = {
+      ...tempBannerSettings,
+      items: updatedItems
+    }
+    setTempBannerSettings(updatedSettings)
+    setBannerSettings(updatedSettings)
+    localStorage.setItem('bannerSettings', JSON.stringify(updatedSettings))
+  }
+
   // 배너 삭제 함수 수정
   const handleDeleteBanner = (id: number) => {
     const updatedItems = tempBannerSettings.items.filter(item => item.id !== id)
@@ -287,7 +301,10 @@ export default function AdminContent() {
   const BannerManagementSection = () => {
     const [isUploading, setIsUploading] = useState(false)
     const [uploadError, setUploadError] = useState<string | null>(null)
+    const [editingBannerId, setEditingBannerId] = useState<number | null>(null)
+    const [editingBanner, setEditingBanner] = useState<BannerItem | null>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
+    const editFileInputRef = useRef<HTMLInputElement>(null)
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault()
@@ -428,6 +445,139 @@ export default function AdminContent() {
       }
     }
 
+    // 배너 수정 시작
+    const handleStartEdit = (banner: BannerItem) => {
+      setEditingBannerId(banner.id)
+      setEditingBanner({ ...banner })
+    }
+
+    // 배너 수정 취소
+    const handleCancelEdit = () => {
+      setEditingBannerId(null)
+      setEditingBanner(null)
+      if (editFileInputRef.current) {
+        editFileInputRef.current.value = ''
+      }
+    }
+
+    // 배너 수정 저장
+    const handleSaveEdit = async (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault()
+      if (!editingBanner) return
+
+      const form = e.currentTarget
+      const formData = new FormData(form)
+      
+      try {
+        setIsUploading(true)
+        setUploadError(null)
+
+        const file = formData.get('editFile') as File
+        const title = formData.get('editTitle') as string
+        const description = formData.get('editDescription') as string
+
+        let bannerUrl = editingBanner.url
+        let bannerType = editingBanner.type
+
+        // 파일이 있는 경우 업로드 처리
+        if (file && file.size > 0) {
+          // 파일 크기 검증 (50MB)
+          if (file.size > 50 * 1024 * 1024) {
+            throw new Error('파일 크기는 50MB를 초과할 수 없습니다.')
+          }
+
+          // 파일 타입 검증
+          const fileType = file.type
+          if (!fileType.startsWith('image/') && !fileType.startsWith('video/')) {
+            throw new Error('이미지 또는 비디오 파일만 업로드 가능합니다.')
+          }
+
+          // 비디오 파일 검증
+          if (fileType.startsWith('video/')) {
+            const allowedVideoTypes = ['video/mp4', 'video/webm', 'video/quicktime']
+            if (!allowedVideoTypes.includes(fileType)) {
+              throw new Error('MP4, WebM, MOV 형식의 비디오만 업로드 가능합니다.')
+            }
+            bannerType = 'video'
+          }
+
+          // 이미지 파일 검증
+          if (fileType.startsWith('image/')) {
+            const allowedImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+            if (!allowedImageTypes.includes(fileType)) {
+              throw new Error('JPG, PNG, GIF, WebP 형식의 이미지만 업로드 가능합니다.')
+            }
+            bannerType = 'image'
+          }
+
+          const uploadData = new FormData()
+          uploadData.append('file', file)
+
+          const response = await fetch('/api/upload', {
+            method: 'POST',
+            body: uploadData,
+          })
+
+          if (!response.ok) {
+            const errorText = await response.text()
+            try {
+              const errorJson = JSON.parse(errorText)
+              throw new Error(errorJson.error || '파일 업로드에 실패했습니다.')
+            } catch (e) {
+              if (response.status === 413) {
+                throw new Error('파일 크기가 너무 큽니다. 50MB 이하의 파일을 업로드해주세요.')
+              }
+              if (response.status === 500) {
+                throw new Error('서버 내부 오류가 발생했습니다. 잠시 후 다시 시도해주세요.')
+              }
+              throw new Error('서버 오류: ' + response.status + ' ' + response.statusText)
+            }
+          }
+
+          const result = await response.json()
+
+          if (!result.success) {
+            throw new Error(result.error || '파일 업로드에 실패했습니다.')
+          }
+
+          if (!result.url) {
+            throw new Error('업로드된 파일의 URL을 받지 못했습니다.')
+          }
+
+          bannerUrl = result.url
+        }
+
+        // 배너 업데이트
+        const updatedBanner: BannerItem = {
+          ...editingBanner,
+          type: bannerType,
+          url: bannerUrl,
+          title: title.trim() || '',
+          description: description.trim() || ''
+        }
+
+        handleUpdateBanner(editingBanner.id, updatedBanner)
+        handleCancelEdit()
+        setUploadError(null)
+        
+      } catch (error) {
+        console.error('Edit error:', error)
+        let errorMessage = '배너 수정 중 오류가 발생했습니다.'
+        
+        if (error instanceof Error) {
+          errorMessage = error.message
+        } else if (typeof error === 'object' && error !== null) {
+          errorMessage = (error as any).error || JSON.stringify(error)
+        } else if (typeof error === 'string') {
+          errorMessage = error
+        }
+        
+        setUploadError(errorMessage)
+      } finally {
+        setIsUploading(false)
+      }
+    }
+
     return (
       <div className="bg-white rounded-lg shadow p-6">
         <h2 className="text-2xl font-bold mb-6">배너 관리</h2>
@@ -437,18 +587,96 @@ export default function AdminContent() {
           <h3 className="text-lg font-semibold mb-4">현재 배너 목록</h3>
           <div className="space-y-4">
             {tempBannerSettings.items.map((banner) => (
-              <div key={banner.id} className="flex items-start justify-between p-4 border rounded">
-                <div>
-                  <h4 className="font-medium">{banner.title}</h4>
-                  <p className="text-sm text-gray-600">{banner.description}</p>
-                  <p className="text-sm text-gray-500 mt-1">{banner.type === 'video' ? '비디오' : '이미지'}</p>
-                </div>
-                <button
-                  onClick={() => handleDeleteBanner(banner.id)}
-                  className="text-red-600 hover:text-red-800"
-                >
-                  삭제
-                </button>
+              <div key={banner.id} className={`border rounded ${editingBannerId === banner.id ? 'border-blue-500 bg-blue-50' : ''}`}>
+                {editingBannerId === banner.id ? (
+                  // 수정 모드
+                  <form onSubmit={handleSaveEdit} className="p-4 space-y-4">
+                    <div className="flex justify-between items-start">
+                      <h4 className="font-medium text-blue-600">배너 수정 중</h4>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={handleCancelEdit}
+                          className="text-gray-600 hover:text-gray-800"
+                        >
+                          취소
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={isUploading}
+                          className={`text-blue-600 hover:text-blue-800 ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                          {isUploading ? '저장 중...' : '저장'}
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-gray-700 text-sm font-bold mb-2">
+                        파일 변경 (선택사항)
+                      </label>
+                      <input
+                        ref={editFileInputRef}
+                        type="file"
+                        name="editFile"
+                        accept="image/*,video/*"
+                        className="w-full"
+                      />
+                      <p className="text-sm text-gray-500 mt-1">
+                        현재: {banner.type === 'video' ? '비디오' : '이미지'}
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-700 text-sm font-bold mb-2">
+                        제목
+                      </label>
+                      <input
+                        type="text"
+                        name="editTitle"
+                        defaultValue={banner.title}
+                        placeholder="배너 제목을 입력하세요"
+                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-700 text-sm font-bold mb-2">
+                        설명
+                      </label>
+                      <textarea
+                        name="editDescription"
+                        defaultValue={banner.description}
+                        placeholder="배너 설명을 입력하세요"
+                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                        rows={3}
+                      />
+                    </div>
+                  </form>
+                ) : (
+                  // 일반 보기 모드
+                  <div className="flex items-start justify-between p-4">
+                    <div>
+                      <h4 className="font-medium">{banner.title || '(제목 없음)'}</h4>
+                      <p className="text-sm text-gray-600">{banner.description || '(설명 없음)'}</p>
+                      <p className="text-sm text-gray-500 mt-1">{banner.type === 'video' ? '비디오' : '이미지'}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleStartEdit(banner)}
+                        className="text-blue-600 hover:text-blue-800"
+                      >
+                        수정
+                      </button>
+                      <button
+                        onClick={() => handleDeleteBanner(banner.id)}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        삭제
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
