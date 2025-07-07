@@ -22,82 +22,35 @@ export default function PortfolioPage() {
 
   const programs = ['전체', '다이어트', '벌크업', '자세교정', '산후관리', '웨딩 PT', '재활운동']
 
-  // 샘플 데이터 (실제로는 API에서 가져올 데이터)
-  const samplePortfolios: PortfolioItem[] = [
-    {
-      id: 1,
-      title: "김민지님의 다이어트 성공 스토리",
-      description: "6개월간의 체계적인 다이어트 프로그램을 통해 15kg 감량에 성공하셨습니다. AI 자세 분석과 개인 맞춤 운동으로 건강하게 목표를 달성했습니다.",
-      beforeImage: "/api/placeholder/300/400",
-      afterImage: "/api/placeholder/300/400", 
-      program: "다이어트",
-      duration: "6개월",
-      results: ["15kg 감량", "체지방률 12% 감소", "근육량 유지"],
-      date: "2024-01-15"
-    },
-    {
-      id: 2,
-      title: "박준호님의 벌크업 성공 사례",
-      description: "4개월간의 집중적인 벌크업 프로그램으로 근육량 8kg 증가를 달성하셨습니다. PCU 시스템을 통한 정확한 체력 측정으로 최적의 운동 강도를 유지했습니다.",
-      beforeImage: "/api/placeholder/300/400",
-      afterImage: "/api/placeholder/300/400",
-      program: "벌크업", 
-      duration: "4개월",
-      results: ["근육량 8kg 증가", "체중 12kg 증가", "벤치프레스 30kg 향상"],
-      date: "2024-01-10"
-    },
-    {
-      id: 3,
-      title: "이서연님의 자세교정 개선 후기",
-      description: "장시간 책상 업무로 인한 거북목과 라운드숄더가 크게 개선되었습니다. 체형 AI 분석으로 정확한 문제점을 파악하고 맞춤 운동을 진행했습니다.",
-      beforeImage: "/api/placeholder/300/400",
-      afterImage: "/api/placeholder/300/400",
-      program: "자세교정",
-      duration: "3개월", 
-      results: ["거북목 20도 개선", "어깨 균형 교정", "요통 완화"],
-      date: "2024-01-05"
-    },
-    {
-      id: 4,
-      title: "정미영님의 산후관리 성공 케이스",
-      description: "출산 후 변화된 체형을 건강하게 회복했습니다. 안전한 운동 강도와 전문적인 산후 케어 프로그램으로 이전보다 더 건강한 몸을 만들었습니다.",
-      beforeImage: "/api/placeholder/300/400",
-      afterImage: "/api/placeholder/300/400",
-      program: "산후관리",
-      duration: "5개월",
-      results: ["출산 전 체중 회복", "복부 근력 강화", "전신 체력 향상"],
-      date: "2024-01-01"
-    },
-    {
-      id: 5,
-      title: "최현우님의 웨딩 PT 완성",
-      description: "결혼식을 앞두고 3개월간 집중 관리를 통해 완벽한 웨딩 바디를 완성했습니다. 턱시도가 완벽하게 어울리는 멋진 몸매를 만들어냈습니다.",
-      beforeImage: "/api/placeholder/300/400",
-      afterImage: "/api/placeholder/300/400",
-      program: "웨딩 PT",
-      duration: "3개월",
-      results: ["체지방 8% 감소", "어깨 라인 완성", "전체적인 체형 개선"],
-      date: "2023-12-25"
-    },
-    {
-      id: 6,
-      title: "홍길동님의 재활운동 회복 과정",
-      description: "무릎 수술 후 재활 과정을 거쳐 완전한 일상 복귀에 성공했습니다. 전문 재활 트레이너와 함께 안전하고 체계적인 회복 프로그램을 진행했습니다.",
-      beforeImage: "/api/placeholder/300/400", 
-      afterImage: "/api/placeholder/300/400",
-      program: "재활운동",
-      duration: "4개월",
-      results: ["무릎 기능 100% 회복", "근력 90% 회복", "일상생활 완전 복귀"],
-      date: "2023-12-20"
-    }
-  ]
-
   useEffect(() => {
-    // 최신순으로 정렬하여 설정
-    const sortedPortfolios = [...samplePortfolios].sort((a, b) => 
-      new Date(b.date).getTime() - new Date(a.date).getTime()
-    )
-    setPortfolios(sortedPortfolios)
+    // localStorage에서 포트폴리오 데이터 로드
+    const loadPortfolios = () => {
+      const savedPortfolios = localStorage.getItem('portfolios')
+      if (savedPortfolios) {
+        const allPortfolios = JSON.parse(savedPortfolios)
+        // 최신순으로 정렬
+        const sortedPortfolios = [...allPortfolios].sort((a, b) => 
+          new Date(b.date).getTime() - new Date(a.date).getTime()
+        )
+        setPortfolios(sortedPortfolios)
+      }
+    }
+
+    // 초기 로드
+    loadPortfolios()
+
+    // storage 이벤트 리스너 추가
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'portfolios') {
+        loadPortfolios()
+      }
+    }
+
+    window.addEventListener('storage', handleStorageChange)
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+    }
   }, [])
 
   const filteredPortfolios = selectedProgram === '전체' 

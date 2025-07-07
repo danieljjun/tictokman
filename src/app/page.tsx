@@ -1,23 +1,21 @@
 import Header from '@/components/Header'
-import HeroSection from '@/components/HeroSection'
+import Banner from '@/components/Banner'
+import BookingStatusSection from '@/components/BookingStatusSection'
 import AISystemSection from '@/components/AISystemSection'
 import ProgramSection from '@/components/ProgramSection'
-import ReviewSection from '@/components/ReviewSection'
 import PortfolioSection from '@/components/PortfolioSection'
-import BookingStatusSection from '@/components/BookingStatusSection'
-import Footer from '@/components/Footer'
+import ReviewSection from '@/components/ReviewSection'
 
 export default function Home() {
   return (
     <main className="min-h-screen bg-white">
       <Header />
-      <HeroSection />
+      <Banner />
+      <BookingStatusSection />
       <AISystemSection />
       <ProgramSection />
-      <BookingStatusSection />
       <PortfolioSection />
       <ReviewSection />
-      <Footer />
     </main>
   )
 }
