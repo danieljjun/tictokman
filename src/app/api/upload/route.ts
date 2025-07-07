@@ -128,64 +128,86 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      // 파일 저장 경로 설정
+      // 파일을 Base64로 변환
       const buffer = Buffer.from(await file.arrayBuffer())
-      const filename = Date.now() + '-' + file.name.replace(/[^a-zA-Z0-9.]/g, '_')
-      const mediaType = fileType.startsWith('image/') ? 'images' : 'videos'
-      const uploadDir = join(process.cwd(), 'public', 'uploads', mediaType)
-      const relativePath = `/uploads/${mediaType}/${filename}`
-      const absolutePath = join(uploadDir, filename)
+      const base64Data = buffer.toString('base64')
+      const dataUrl = `data:${fileType};base64,${base64Data}`
+      
+      console.log('File converted to Base64 successfully')
+      console.log('File size:', buffer.length, 'bytes')
 
-      console.log('Saving file:', {
-        filename,
-        type: fileType,
-        size: file.size,
-        uploadDir,
-        absolutePath
-      })
-
-      // 업로드 디렉토리 생성 (재귀적으로)
-      try {
-        if (!existsSync(uploadDir)) {
-          console.log('Creating upload directory:', uploadDir)
-          await mkdir(uploadDir, { recursive: true })
-          console.log('Upload directory created successfully')
+      // Vercel 환경에서는 Base64 데이터 URL을 반환
+      const isVercel = process.env.VERCEL === '1'
+      
+      if (isVercel) {
+        console.log('Running on Vercel - returning Base64 data URL')
+        
+        const response = {
+          url: dataUrl,
+          message: '파일이 성공적으로 업로드되었습니다. (Base64 인코딩)'
         }
-      } catch (dirError) {
-        console.error('Directory creation error:', dirError)
-        return createErrorResponse('업로드 디렉토리를 생성할 수 없습니다: ' + (dirError instanceof Error ? dirError.message : String(dirError)), 500)
-      }
+        
+        console.log('Sending success response with Base64 data')
+        return createSuccessResponse(response)
+      } else {
+        // 로컬 개발 환경에서는 파일 시스템에 저장
+        const filename = Date.now() + '-' + file.name.replace(/[^a-zA-Z0-9.]/g, '_')
+        const mediaType = fileType.startsWith('image/') ? 'images' : 'videos'
+        const uploadDir = join(process.cwd(), 'public', 'uploads', mediaType)
+        const relativePath = `/uploads/${mediaType}/${filename}`
+        const absolutePath = join(uploadDir, filename)
 
-      // 파일 저장
-      try {
-        console.log('Writing file to disk...')
-        await writeFile(absolutePath, buffer)
-        console.log('File saved successfully')
-      } catch (writeError) {
-        console.error('File write error:', writeError)
-        if (writeError instanceof Error && writeError.message.includes('EACCES')) {
-          return createErrorResponse('파일 저장 권한이 없습니다. 관리자에게 문의하세요.', 500)
+        console.log('Saving file to local filesystem:', {
+          filename,
+          type: fileType,
+          size: file.size,
+          uploadDir,
+          absolutePath
+        })
+
+        // 업로드 디렉토리 생성 (재귀적으로)
+        try {
+          if (!existsSync(uploadDir)) {
+            console.log('Creating upload directory:', uploadDir)
+            await mkdir(uploadDir, { recursive: true })
+            console.log('Upload directory created successfully')
+          }
+        } catch (dirError) {
+          console.error('Directory creation error:', dirError)
+          return createErrorResponse('업로드 디렉토리를 생성할 수 없습니다: ' + (dirError instanceof Error ? dirError.message : String(dirError)), 500)
         }
-        if (writeError instanceof Error && writeError.message.includes('ENOSPC')) {
-          return createErrorResponse('디스크 공간이 부족합니다.', 500)
+
+        // 파일 저장
+        try {
+          console.log('Writing file to disk...')
+          await writeFile(absolutePath, buffer)
+          console.log('File saved successfully')
+        } catch (writeError) {
+          console.error('File write error:', writeError)
+          if (writeError instanceof Error && writeError.message.includes('EACCES')) {
+            return createErrorResponse('파일 저장 권한이 없습니다. 관리자에게 문의하세요.', 500)
+          }
+          if (writeError instanceof Error && writeError.message.includes('ENOSPC')) {
+            return createErrorResponse('디스크 공간이 부족합니다.', 500)
+          }
+          return createErrorResponse('파일 저장 중 오류가 발생했습니다: ' + (writeError instanceof Error ? writeError.message : String(writeError)), 500)
         }
-        return createErrorResponse('파일 저장 중 오류가 발생했습니다: ' + (writeError instanceof Error ? writeError.message : String(writeError)), 500)
-      }
 
-      const response = {
-        url: relativePath,
-        message: '파일이 성공적으로 업로드되었습니다.'
-      }
+        const response = {
+          url: relativePath,
+          message: '파일이 성공적으로 업로드되었습니다.'
+        }
 
-      console.log('Sending success response:', response)
-      return createSuccessResponse(response)
+        console.log('Sending success response:', response)
+        return createSuccessResponse(response)
+      }
 
     } catch (error) {
-      console.error('File system error:', error)
+      console.error('File processing error:', error)
       if (error instanceof Error && error.message.includes('EACCES')) {
         return createErrorResponse('파일 저장 권한이 없습니다. 관리자에게 문의하세요.', 500)
       }
-      return createErrorResponse('파일 저장 중 오류가 발생했습니다: ' + (error instanceof Error ? error.message : String(error)), 500)
+      return createErrorResponse('파일 처리 중 오류가 발생했습니다: ' + (error instanceof Error ? error.message : String(error)), 500)
     }
   } catch (error) {
     console.error('Upload error:', error)

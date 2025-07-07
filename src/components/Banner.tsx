@@ -119,12 +119,22 @@ export default function Banner() {
 
       {/* 배너 콘텐츠 */}
       {currentItem.type === 'image' && currentItem.url !== '/banner-default.jpg' && (
-        <Image
-          src={currentItem.url}
-          alt={currentItem.title}
-          fill
-          className="object-cover"
-        />
+        currentItem.url.startsWith('data:') ? (
+          // Base64 데이터 URL인 경우
+          <img
+            src={currentItem.url}
+            alt={currentItem.title}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        ) : (
+          // 일반 URL인 경우
+          <Image
+            src={currentItem.url}
+            alt={currentItem.title}
+            fill
+            className="object-cover"
+          />
+        )
       )}
       {currentItem.type === 'video' && (
         <video
@@ -138,16 +148,23 @@ export default function Banner() {
       )}
 
       {/* 배너 텍스트 */}
-      <div className={`absolute inset-0 flex items-center justify-center ${currentItem.url !== '/banner-default.jpg' ? 'bg-black/30' : ''}`}>
+      <div className={`absolute inset-0 flex items-center justify-center ${
+        currentItem.url !== '/banner-default.jpg' && !currentItem.url.startsWith('data:') ? 'bg-black/30' : 
+        currentItem.url.startsWith('data:') ? 'bg-black/30' : ''
+      }`}>
         <div className="text-center max-w-4xl mx-auto px-4">
-          <h2 className={`text-4xl md:text-6xl font-bold mb-6 ${currentItem.url !== '/banner-default.jpg' ? 'text-white' : 'text-gray-900'}`}>
+          <h2 className={`text-4xl md:text-6xl font-bold mb-6 ${
+            currentItem.url !== '/banner-default.jpg' || currentItem.url.startsWith('data:') ? 'text-white' : 'text-gray-900'
+          }`}>
             {currentItem.title.split(' ').map((word, i) => (
               <span key={i} className={word === 'Total' || word === 'Check' ? 'text-blue-600' : ''}>
                 {word}{' '}
               </span>
             ))}
           </h2>
-          <p className={`text-xl mb-8 whitespace-pre-line ${currentItem.url !== '/banner-default.jpg' ? 'text-white' : 'text-gray-600'}`}>
+          <p className={`text-xl mb-8 whitespace-pre-line ${
+            currentItem.url !== '/banner-default.jpg' || currentItem.url.startsWith('data:') ? 'text-white' : 'text-gray-600'
+          }`}>
             {currentItem.description}
           </p>
           {currentItem.url === '/banner-default.jpg' && (
