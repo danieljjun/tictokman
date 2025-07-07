@@ -397,8 +397,8 @@ export default function AdminContent() {
           id: Date.now(),
           type: bannerType,
           url: bannerUrl,
-          title: title.trim() || '제목 없음',
-          description: description.trim() || '설명 없음'
+          title: title.trim() || '',
+          description: description.trim() || ''
         }
 
         console.log('Creating new banner:', newBanner)

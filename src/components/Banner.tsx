@@ -153,20 +153,24 @@ export default function Banner() {
         currentItem.url.startsWith('data:') ? 'bg-black/30' : ''
       }`}>
         <div className="text-center max-w-4xl mx-auto px-4">
-          <h2 className={`text-4xl md:text-6xl font-bold mb-6 ${
-            currentItem.url !== '/banner-default.jpg' || currentItem.url.startsWith('data:') ? 'text-white' : 'text-gray-900'
-          }`}>
-            {currentItem.title.split(' ').map((word, i) => (
-              <span key={i} className={word === 'Total' || word === 'Check' ? 'text-blue-600' : ''}>
-                {word}{' '}
-              </span>
-            ))}
-          </h2>
-          <p className={`text-xl mb-8 whitespace-pre-line ${
-            currentItem.url !== '/banner-default.jpg' || currentItem.url.startsWith('data:') ? 'text-white' : 'text-gray-600'
-          }`}>
-            {currentItem.description}
-          </p>
+          {currentItem.title && (
+            <h2 className={`text-4xl md:text-6xl font-bold mb-6 ${
+              currentItem.url !== '/banner-default.jpg' || currentItem.url.startsWith('data:') ? 'text-white' : 'text-gray-900'
+            }`}>
+              {currentItem.title.split(' ').map((word, i) => (
+                <span key={i} className={word === 'Total' || word === 'Check' ? 'text-blue-600' : ''}>
+                  {word}{' '}
+                </span>
+              ))}
+            </h2>
+          )}
+          {currentItem.description && (
+            <p className={`text-xl mb-8 whitespace-pre-line ${
+              currentItem.url !== '/banner-default.jpg' || currentItem.url.startsWith('data:') ? 'text-white' : 'text-gray-600'
+            }`}>
+              {currentItem.description}
+            </p>
+          )}
           {currentItem.url === '/banner-default.jpg' && (
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a href="/booking" className="bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-700 transition-colors text-center">
