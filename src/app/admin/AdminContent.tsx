@@ -75,6 +75,35 @@ export default function AdminContent() {
     items: BannerItem[]
   }
 
+  // 결제 설정 상태 추가
+  interface PaymentSettings {
+    enabled: boolean
+    paymentMethods: {
+      card: boolean
+      bankTransfer: boolean
+      kakaoPay: boolean
+      naverPay: boolean
+    }
+    programs: {
+      id: number
+      name: string
+      price: number
+      description: string
+      duration: string
+      active: boolean
+    }[]
+    taxSettings: {
+      includeTax: boolean
+      taxRate: number
+    }
+    notificationSettings: {
+      emailNotification: boolean
+      smsNotification: boolean
+      adminEmail: string
+      adminPhone: string
+    }
+  }
+
   const defaultBanner: BannerItem = {
     id: 1,
     type: 'image',
@@ -89,12 +118,88 @@ export default function AdminContent() {
     items: [defaultBanner]
   }
 
+  const defaultPaymentSettings: PaymentSettings = {
+    enabled: true,
+    paymentMethods: {
+      card: true,
+      bankTransfer: true,
+      kakaoPay: false,
+      naverPay: false
+    },
+    programs: [
+      {
+        id: 1,
+        name: '재활운동',
+        price: 150000,
+        description: '부상 후 회복을 위한 전문 재활 프로그램',
+        duration: '3개월',
+        active: true
+      },
+      {
+        id: 2,
+        name: '자세교정',
+        price: 120000,
+        description: '거북목, 척추측만증 등 자세 교정 프로그램',
+        duration: '2개월',
+        active: true
+      },
+      {
+        id: 3,
+        name: '다이어트',
+        price: 180000,
+        description: '체계적인 다이어트 및 체중 관리 프로그램',
+        duration: '3개월',
+        active: true
+      },
+      {
+        id: 4,
+        name: '벌크업',
+        price: 200000,
+        description: '근육량 증가를 위한 전문 훈련 프로그램',
+        duration: '4개월',
+        active: true
+      },
+      {
+        id: 5,
+        name: '산후관리',
+        price: 160000,
+        description: '출산 후 체형 회복 및 건강 관리 프로그램',
+        duration: '3개월',
+        active: true
+      },
+      {
+        id: 6,
+        name: '웨딩 PT',
+        price: 140000,
+        description: '웨딩을 위한 특별한 피트니스 프로그램',
+        duration: '2개월',
+        active: true
+      }
+    ],
+    taxSettings: {
+      includeTax: true,
+      taxRate: 10
+    },
+    notificationSettings: {
+      emailNotification: true,
+      smsNotification: true,
+      adminEmail: 'admin@infinitygym.com',
+      adminPhone: '010-1234-5678'
+    }
+  }
+
   const [bannerSettings, setBannerSettings] = useState<BannerSettings>(defaultSettings)
   const [tempBannerSettings, setTempBannerSettings] = useState<BannerSettings>(defaultSettings)
   const [editingBannerId, setEditingBannerId] = useState<number | null>(null)
 
+  // 결제 설정 상태
+  const [paymentSettings, setPaymentSettings] = useState<PaymentSettings>(defaultPaymentSettings)
+  const [tempPaymentSettings, setTempPaymentSettings] = useState<PaymentSettings>(defaultPaymentSettings)
+  const [editingProgramId, setEditingProgramId] = useState<number | null>(null)
+
   // localStorage 초기화는 useEffect에서만 처리
   useEffect(() => {
+    // 배너 설정 로드
     const savedSettings = localStorage.getItem('bannerSettings')
     if (savedSettings) {
       const parsed = JSON.parse(savedSettings)
@@ -102,6 +207,16 @@ export default function AdminContent() {
       setTempBannerSettings(parsed)
     } else {
       localStorage.setItem('bannerSettings', JSON.stringify(defaultSettings))
+    }
+
+    // 결제 설정 로드
+    const savedPaymentSettings = localStorage.getItem('paymentSettings')
+    if (savedPaymentSettings) {
+      const parsed = JSON.parse(savedPaymentSettings)
+      setPaymentSettings(parsed)
+      setTempPaymentSettings(parsed)
+    } else {
+      localStorage.setItem('paymentSettings', JSON.stringify(defaultPaymentSettings))
     }
   }, [])
 
@@ -113,6 +228,11 @@ export default function AdminContent() {
         setBannerSettings(newSettings)
         setTempBannerSettings(newSettings)
       }
+      if (e.key === 'paymentSettings' && e.newValue) {
+        const newSettings = JSON.parse(e.newValue)
+        setPaymentSettings(newSettings)
+        setTempPaymentSettings(newSettings)
+      }
     }
 
     window.addEventListener('storage', handleStorageChange)
@@ -123,7 +243,14 @@ export default function AdminContent() {
   const saveBannerSettings = () => {
     setBannerSettings(tempBannerSettings)
     localStorage.setItem('bannerSettings', JSON.stringify(tempBannerSettings))
-    alert('설정이 저장되었습니다.')
+    alert('배너 설정이 저장되었습니다.')
+  }
+
+  // 결제 설정 저장
+  const savePaymentSettings = () => {
+    setPaymentSettings(tempPaymentSettings)
+    localStorage.setItem('paymentSettings', JSON.stringify(tempPaymentSettings))
+    alert('결제 설정이 저장되었습니다.')
   }
 
   // 새 배너 추가 시 자동 저장
@@ -147,6 +274,29 @@ export default function AdminContent() {
     setTempBannerSettings(updatedSettings)
     setBannerSettings(updatedSettings)
     localStorage.setItem('bannerSettings', JSON.stringify(updatedSettings))
+  }
+
+  // 결제 프로그램 추가
+  const handleAddProgram = (newProgram: PaymentSettings['programs'][0]) => {
+    const updatedSettings = {
+      ...tempPaymentSettings,
+      programs: [...tempPaymentSettings.programs, { ...newProgram, id: Date.now() }]
+    }
+    setTempPaymentSettings(updatedSettings)
+    setPaymentSettings(updatedSettings)
+    localStorage.setItem('paymentSettings', JSON.stringify(updatedSettings))
+  }
+
+  // 결제 프로그램 삭제
+  const handleDeleteProgram = (id: number) => {
+    const updatedPrograms = tempPaymentSettings.programs.filter(program => program.id !== id)
+    const updatedSettings = {
+      ...tempPaymentSettings,
+      programs: updatedPrograms
+    }
+    setTempPaymentSettings(updatedSettings)
+    setPaymentSettings(updatedSettings)
+    localStorage.setItem('paymentSettings', JSON.stringify(updatedSettings))
   }
 
   // 배너 관리 섹션 수정
@@ -432,6 +582,441 @@ export default function AdminContent() {
           >
             설정 저장
           </button>
+        </div>
+      </div>
+    )
+  }
+
+  // 결제 설정 섹션
+  const PaymentSettingsSection = () => {
+    return (
+      <div className="bg-white rounded-lg shadow p-6 mb-8">
+        <h2 className="text-2xl font-bold mb-6">결제 설정</h2>
+        
+        {/* 결제 활성화 설정 */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold mb-2">결제 시스템 활성화</h3>
+              <p className="text-sm text-gray-600">결제 기능을 활성화하거나 비활성화합니다.</p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={tempPaymentSettings.enabled}
+                onChange={(e) => {
+                  setTempPaymentSettings({
+                    ...tempPaymentSettings,
+                    enabled: e.target.checked
+                  })
+                }}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+            </label>
+          </div>
+        </div>
+
+        {/* 결제 방법 설정 */}
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold mb-4">결제 방법 설정</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <label className="flex items-center space-x-3">
+              <input
+                type="checkbox"
+                checked={tempPaymentSettings.paymentMethods.card}
+                onChange={(e) => {
+                  setTempPaymentSettings({
+                    ...tempPaymentSettings,
+                    paymentMethods: {
+                      ...tempPaymentSettings.paymentMethods,
+                      card: e.target.checked
+                    }
+                  })
+                }}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-gray-700">신용카드</span>
+            </label>
+            <label className="flex items-center space-x-3">
+              <input
+                type="checkbox"
+                checked={tempPaymentSettings.paymentMethods.bankTransfer}
+                onChange={(e) => {
+                  setTempPaymentSettings({
+                    ...tempPaymentSettings,
+                    paymentMethods: {
+                      ...tempPaymentSettings.paymentMethods,
+                      bankTransfer: e.target.checked
+                    }
+                  })
+                }}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-gray-700">계좌이체</span>
+            </label>
+            <label className="flex items-center space-x-3">
+              <input
+                type="checkbox"
+                checked={tempPaymentSettings.paymentMethods.kakaoPay}
+                onChange={(e) => {
+                  setTempPaymentSettings({
+                    ...tempPaymentSettings,
+                    paymentMethods: {
+                      ...tempPaymentSettings.paymentMethods,
+                      kakaoPay: e.target.checked
+                    }
+                  })
+                }}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-gray-700">카카오페이</span>
+            </label>
+            <label className="flex items-center space-x-3">
+              <input
+                type="checkbox"
+                checked={tempPaymentSettings.paymentMethods.naverPay}
+                onChange={(e) => {
+                  setTempPaymentSettings({
+                    ...tempPaymentSettings,
+                    paymentMethods: {
+                      ...tempPaymentSettings.paymentMethods,
+                      naverPay: e.target.checked
+                    }
+                  })
+                }}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-gray-700">네이버페이</span>
+            </label>
+          </div>
+        </div>
+
+        {/* 세금 설정 */}
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold mb-4">세금 설정</h3>
+          <div className="space-y-4">
+            <label className="flex items-center space-x-3">
+              <input
+                type="checkbox"
+                checked={tempPaymentSettings.taxSettings.includeTax}
+                onChange={(e) => {
+                  setTempPaymentSettings({
+                    ...tempPaymentSettings,
+                    taxSettings: {
+                      ...tempPaymentSettings.taxSettings,
+                      includeTax: e.target.checked
+                    }
+                  })
+                }}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-gray-700">부가세 포함</span>
+            </label>
+            {tempPaymentSettings.taxSettings.includeTax && (
+              <div>
+                <label className="block text-gray-700 text-sm font-bold mb-2">
+                  부가세율 (%)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="20"
+                  step="0.1"
+                  value={tempPaymentSettings.taxSettings.taxRate}
+                  onChange={(e) => {
+                    setTempPaymentSettings({
+                      ...tempPaymentSettings,
+                      taxSettings: {
+                        ...tempPaymentSettings.taxSettings,
+                        taxRate: Number(e.target.value)
+                      }
+                    })
+                  }}
+                  className="shadow appearance-none border rounded w-32 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* 알림 설정 */}
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold mb-4">알림 설정</h3>
+          <div className="space-y-4">
+            <label className="flex items-center space-x-3">
+              <input
+                type="checkbox"
+                checked={tempPaymentSettings.notificationSettings.emailNotification}
+                onChange={(e) => {
+                  setTempPaymentSettings({
+                    ...tempPaymentSettings,
+                    notificationSettings: {
+                      ...tempPaymentSettings.notificationSettings,
+                      emailNotification: e.target.checked
+                    }
+                  })
+                }}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-gray-700">이메일 알림</span>
+            </label>
+            <label className="flex items-center space-x-3">
+              <input
+                type="checkbox"
+                checked={tempPaymentSettings.notificationSettings.smsNotification}
+                onChange={(e) => {
+                  setTempPaymentSettings({
+                    ...tempPaymentSettings,
+                    notificationSettings: {
+                      ...tempPaymentSettings.notificationSettings,
+                      smsNotification: e.target.checked
+                    }
+                  })
+                }}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-gray-700">SMS 알림</span>
+            </label>
+            <div>
+              <label className="block text-gray-700 text-sm font-bold mb-2">
+                관리자 이메일
+              </label>
+              <input
+                type="email"
+                value={tempPaymentSettings.notificationSettings.adminEmail}
+                onChange={(e) => {
+                  setTempPaymentSettings({
+                    ...tempPaymentSettings,
+                    notificationSettings: {
+                      ...tempPaymentSettings.notificationSettings,
+                      adminEmail: e.target.value
+                    }
+                  })
+                }}
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                placeholder="admin@example.com"
+              />
+            </div>
+            <div>
+              <label className="block text-gray-700 text-sm font-bold mb-2">
+                관리자 연락처
+              </label>
+              <input
+                type="tel"
+                value={tempPaymentSettings.notificationSettings.adminPhone}
+                onChange={(e) => {
+                  setTempPaymentSettings({
+                    ...tempPaymentSettings,
+                    notificationSettings: {
+                      ...tempPaymentSettings.notificationSettings,
+                      adminPhone: e.target.value
+                    }
+                  })
+                }}
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                placeholder="010-1234-5678"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* 저장 버튼 */}
+        <div className="flex justify-end">
+          <button
+            onClick={savePaymentSettings}
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+          >
+            설정 저장
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // 결제 프로그램 관리 섹션
+  const PaymentProgramsSection = () => {
+    const [showAddForm, setShowAddForm] = useState(false)
+    const [newProgram, setNewProgram] = useState({
+      name: '',
+      price: 0,
+      description: '',
+      duration: '',
+      active: true
+    })
+
+    const handleAddProgram = (e: React.FormEvent) => {
+      e.preventDefault()
+      if (newProgram.name && newProgram.price > 0) {
+        const programToAdd = {
+          ...newProgram,
+          id: Date.now()
+        }
+        
+        const updatedSettings = {
+          ...tempPaymentSettings,
+          programs: [...tempPaymentSettings.programs, programToAdd]
+        }
+        setTempPaymentSettings(updatedSettings)
+        setPaymentSettings(updatedSettings)
+        localStorage.setItem('paymentSettings', JSON.stringify(updatedSettings))
+        
+        setNewProgram({
+          name: '',
+          price: 0,
+          description: '',
+          duration: '',
+          active: true
+        })
+        setShowAddForm(false)
+      }
+    }
+
+    return (
+      <div className="bg-white rounded-lg shadow p-6">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold">결제 프로그램 관리</h2>
+          <button
+            onClick={() => setShowAddForm(!showAddForm)}
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+          >
+            {showAddForm ? '취소' : '새 프로그램 추가'}
+          </button>
+        </div>
+
+        {/* 새 프로그램 추가 폼 */}
+        {showAddForm && (
+          <form onSubmit={handleAddProgram} className="mb-8 p-4 border rounded-lg bg-gray-50">
+            <h3 className="text-lg font-semibold mb-4">새 프로그램 추가</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-gray-700 text-sm font-bold mb-2">
+                  프로그램명
+                </label>
+                <input
+                  type="text"
+                  value={newProgram.name}
+                  onChange={(e) => setNewProgram({...newProgram, name: e.target.value})}
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-gray-700 text-sm font-bold mb-2">
+                  가격 (원)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={newProgram.price}
+                  onChange={(e) => setNewProgram({...newProgram, price: Number(e.target.value)})}
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-gray-700 text-sm font-bold mb-2">
+                  기간
+                </label>
+                <input
+                  type="text"
+                  value={newProgram.duration}
+                  onChange={(e) => setNewProgram({...newProgram, duration: e.target.value})}
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  placeholder="예: 3개월"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-gray-700 text-sm font-bold mb-2">
+                  활성화
+                </label>
+                <label className="flex items-center space-x-3">
+                  <input
+                    type="checkbox"
+                    checked={newProgram.active}
+                    onChange={(e) => setNewProgram({...newProgram, active: e.target.checked})}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-gray-700">활성화</span>
+                </label>
+              </div>
+            </div>
+            <div className="mt-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2">
+                설명
+              </label>
+              <textarea
+                value={newProgram.description}
+                onChange={(e) => setNewProgram({...newProgram, description: e.target.value})}
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                rows={3}
+                required
+              />
+            </div>
+            <div className="flex justify-end mt-4">
+              <button
+                type="submit"
+                className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+              >
+                프로그램 추가
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* 프로그램 목록 */}
+        <div className="space-y-4">
+          {tempPaymentSettings.programs.map((program) => (
+            <div key={program.id} className="border rounded-lg p-4">
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <h3 className="text-lg font-semibold">{program.name}</h3>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      program.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    }`}>
+                      {program.active ? '활성' : '비활성'}
+                    </span>
+                  </div>
+                  <p className="text-gray-600 mb-2">{program.description}</p>
+                  <div className="flex items-center space-x-4 text-sm text-gray-500">
+                    <span>가격: {program.price.toLocaleString()}원</span>
+                    <span>기간: {program.duration}</span>
+                  </div>
+                </div>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => {
+                      const updatedPrograms = tempPaymentSettings.programs.map(p => 
+                        p.id === program.id ? {...p, active: !p.active} : p
+                      )
+                      const updatedSettings = {
+                        ...tempPaymentSettings,
+                        programs: updatedPrograms
+                      }
+                      setTempPaymentSettings(updatedSettings)
+                      setPaymentSettings(updatedSettings)
+                      localStorage.setItem('paymentSettings', JSON.stringify(updatedSettings))
+                    }}
+                    className={`px-3 py-1 rounded text-sm ${
+                      program.active 
+                        ? 'bg-red-100 text-red-600 hover:bg-red-200' 
+                        : 'bg-green-100 text-green-600 hover:bg-green-200'
+                    }`}
+                  >
+                    {program.active ? '비활성화' : '활성화'}
+                  </button>
+                  <button
+                    onClick={() => handleDeleteProgram(program.id)}
+                    className="px-3 py-1 bg-red-100 text-red-600 rounded text-sm hover:bg-red-200"
+                  >
+                    삭제
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     )
@@ -1254,6 +1839,18 @@ export default function AdminContent() {
     </div>
   )
 
+  const renderPayment = () => (
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-8">결제 설정</h1>
+      
+      {/* 결제 설정 섹션 */}
+      <PaymentSettingsSection />
+
+      {/* 결제 프로그램 관리 섹션 */}
+      <PaymentProgramsSection />
+    </div>
+  )
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* 헤더 */}
@@ -1303,6 +1900,7 @@ export default function AdminContent() {
             {[
               { id: 'dashboard', name: '대시보드' },
               { id: 'banner', name: '배너 관리' },
+              { id: 'payment', name: '결제 설정' },
               { id: 'reservations', name: '예약 관리' },
               { id: 'members', name: '회원 관리' },
               { id: 'reviews', name: '리뷰 관리' },
@@ -1433,6 +2031,30 @@ export default function AdminContent() {
               </>
             )}
 
+            {/* 결제 설정 액션 버튼 */}
+            {activeTab === 'payment' && (
+              <>
+                <button
+                  onClick={() => alert('결제 설정을 초기화합니다.')}
+                  className="inline-flex items-center px-4 py-2 border border-orange-500 text-orange-600 rounded-lg hover:bg-orange-50"
+                >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  설정 초기화
+                </button>
+                <button
+                  onClick={() => alert('결제 통계를 확인합니다.')}
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                  결제 통계
+                </button>
+              </>
+            )}
+
             {/* 포트폴리오 관리 액션 버튼 */}
             {activeTab === 'portfolio' && (
               <>
@@ -1455,6 +2077,7 @@ export default function AdminContent() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {activeTab === 'dashboard' && renderDashboard()}
         {activeTab === 'banner' && renderBanner()}
+        {activeTab === 'payment' && renderPayment()}
         {activeTab === 'reservations' && renderReservations()}
         {activeTab === 'members' && renderMembers()}
         {activeTab === 'reviews' && renderReviews()}
