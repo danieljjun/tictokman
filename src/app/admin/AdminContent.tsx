@@ -183,23 +183,52 @@ export default function AdminContent() {
 
   // localStorage 초기화는 useEffect에서만 처리
   useEffect(() => {
+    console.log('AdminContent: Initializing localStorage settings')
+    
     // 배너 설정 로드
-    const savedSettings = localStorage.getItem('bannerSettings')
-    if (savedSettings) {
-      const parsed = JSON.parse(savedSettings)
-      setBannerSettings(parsed)
-      setTempBannerSettings(parsed)
-    } else {
+    try {
+      const savedSettings = localStorage.getItem('bannerSettings')
+      console.log('AdminContent: Loading banner settings:', savedSettings)
+      
+      if (savedSettings) {
+        const parsed = JSON.parse(savedSettings)
+        console.log('AdminContent: Parsed banner settings:', parsed)
+        
+        if (parsed && Array.isArray(parsed.items)) {
+          setBannerSettings(parsed)
+          setTempBannerSettings(parsed)
+          console.log('AdminContent: Banner settings loaded successfully')
+        } else {
+          console.error('AdminContent: Invalid banner settings format')
+          localStorage.setItem('bannerSettings', JSON.stringify(defaultSettings))
+          setBannerSettings(defaultSettings)
+          setTempBannerSettings(defaultSettings)
+        }
+      } else {
+        console.log('AdminContent: No saved banner settings, using defaults')
+        localStorage.setItem('bannerSettings', JSON.stringify(defaultSettings))
+        setBannerSettings(defaultSettings)
+        setTempBannerSettings(defaultSettings)
+      }
+    } catch (error) {
+      console.error('AdminContent: Error loading banner settings:', error)
       localStorage.setItem('bannerSettings', JSON.stringify(defaultSettings))
+      setBannerSettings(defaultSettings)
+      setTempBannerSettings(defaultSettings)
     }
 
     // 결제 설정 로드
-    const savedPaymentSettings = localStorage.getItem('paymentSettings')
-    if (savedPaymentSettings) {
-      const parsed = JSON.parse(savedPaymentSettings)
-      setPaymentSettings(parsed)
-      setTempPaymentSettings(parsed)
-    } else {
+    try {
+      const savedPaymentSettings = localStorage.getItem('paymentSettings')
+      if (savedPaymentSettings) {
+        const parsed = JSON.parse(savedPaymentSettings)
+        setPaymentSettings(parsed)
+        setTempPaymentSettings(parsed)
+      } else {
+        localStorage.setItem('paymentSettings', JSON.stringify(defaultPaymentSettings))
+      }
+    } catch (error) {
+      console.error('AdminContent: Error loading payment settings:', error)
       localStorage.setItem('paymentSettings', JSON.stringify(defaultPaymentSettings))
     }
   }, [])
@@ -241,28 +270,40 @@ export default function AdminContent() {
   const handleAddBanner = (newBanner: BannerItem) => {
     console.log('handleAddBanner called with:', newBanner)
     
+    // 현재 실제 배너 설정을 기반으로 업데이트
+    const currentSettings = bannerSettings
+    console.log('Current banner settings:', currentSettings)
+    
     // 기존 배너 목록에 새 배너 추가
-    const updatedItems = [...tempBannerSettings.items, newBanner]
+    const updatedItems = [...currentSettings.items, newBanner]
     const updatedSettings = {
-      ...tempBannerSettings,
+      ...currentSettings,
       items: updatedItems
     }
     
     console.log('Updated settings:', updatedSettings)
     console.log('Total banners:', updatedItems.length)
     
-    // 상태 업데이트
-    setTempBannerSettings(updatedSettings)
+    // 상태 업데이트 (실제 설정과 임시 설정 모두)
     setBannerSettings(updatedSettings)
+    setTempBannerSettings(updatedSettings)
     
     // localStorage에 저장
     try {
-      localStorage.setItem('bannerSettings', JSON.stringify(updatedSettings))
+      const settingsToSave = JSON.stringify(updatedSettings)
+      localStorage.setItem('bannerSettings', settingsToSave)
       console.log('Banner saved to localStorage successfully')
+      console.log('Saved data:', settingsToSave)
       
       // 저장 확인
       const savedData = localStorage.getItem('bannerSettings')
-      console.log('Saved data verification:', savedData ? JSON.parse(savedData) : 'null')
+      if (savedData) {
+        const parsedData = JSON.parse(savedData)
+        console.log('Saved data verification:', parsedData)
+        console.log('Verification - Total banners:', parsedData.items?.length || 0)
+      } else {
+        console.error('No data found in localStorage after saving')
+      }
     } catch (error) {
       console.error('Error saving to localStorage:', error)
     }

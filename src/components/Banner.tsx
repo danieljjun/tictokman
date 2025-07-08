@@ -36,12 +36,45 @@ export default function Banner() {
           const parsedSettings = JSON.parse(savedSettings)
           console.log('Parsed banner settings:', parsedSettings)
           console.log('Number of banners:', parsedSettings.items?.length || 0)
-          setSettings(parsedSettings)
+          
+          // 데이터 유효성 검증
+          if (parsedSettings && typeof parsedSettings === 'object') {
+            if (Array.isArray(parsedSettings.items)) {
+              console.log('Valid banner settings found, setting state')
+              setSettings(parsedSettings)
+            } else {
+              console.error('Invalid banner settings: items is not an array')
+              console.log('Falling back to default settings')
+              setSettings({
+                interval: 5000,
+                height: 500,
+                items: []
+              })
+            }
+          } else {
+            console.error('Invalid banner settings format')
+            setSettings({
+              interval: 5000,
+              height: 500,
+              items: []
+            })
+          }
         } else {
-          console.log('No saved banner settings found')
+          console.log('No saved banner settings found, using defaults')
+          setSettings({
+            interval: 5000,
+            height: 500,
+            items: []
+          })
         }
       } catch (error) {
         console.error('Error loading banner settings:', error)
+        console.log('Falling back to default settings due to error')
+        setSettings({
+          interval: 5000,
+          height: 500,
+          items: []
+        })
       }
     }
 
@@ -51,6 +84,7 @@ export default function Banner() {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'bannerSettings') {
         console.log('Storage changed, reloading banner settings')
+        console.log('New value:', e.newValue)
         loadSettings()
       }
     }
