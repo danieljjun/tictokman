@@ -254,19 +254,40 @@ export default function AdminContent() {
 
   // 배너 설정 저장 및 자동 연동
   const saveBannerSettings = () => {
-    setBannerSettings(tempBannerSettings)
-    localStorage.setItem('bannerSettings', JSON.stringify(tempBannerSettings))
-    
-    // localStorage 이벤트를 트리거하여 다른 탭에서도 업데이트되도록 함
-    window.dispatchEvent(new StorageEvent('storage', {
-      key: 'bannerSettings',
-      newValue: JSON.stringify(tempBannerSettings)
-    }))
-    
-    // 커스텀 이벤트를 트리거하여 같은 탭에서도 업데이트되도록 함
-    window.dispatchEvent(new CustomEvent('bannerSettingsUpdated'))
-    
-    alert('배너 설정이 저장되었습니다.')
+    try {
+      // 배너 설정 유효성 검사
+      if (!tempBannerSettings || !Array.isArray(tempBannerSettings.items)) {
+        console.error('Invalid banner settings format')
+        return
+      }
+
+      // Base64 데이터 크기 검사
+      const totalSize = tempBannerSettings.items.reduce((size, item) => {
+        if (item.url.startsWith('data:')) {
+          return size + item.url.length
+        }
+        return size
+      }, 0)
+
+      // localStorage 용량 제한 (약 5MB)
+      if (totalSize > 5 * 1024 * 1024) {
+        alert('배너 이미지/비디오의 총 크기가 너무 큽니다. 파일 크기를 줄여주세요.')
+        return
+      }
+
+      // 설정 저장
+      localStorage.setItem('bannerSettings', JSON.stringify(tempBannerSettings))
+      setBannerSettings(tempBannerSettings)
+
+      // 다른 탭/기기와의 동기화를 위한 이벤트 발생
+      window.dispatchEvent(new Event('bannerSettingsUpdated'))
+      
+      console.log('Banner settings saved successfully')
+      alert('배너 설정이 저장되었습니다.')
+    } catch (error) {
+      console.error('Error saving banner settings:', error)
+      alert('배너 설정 저장 중 오류가 발생했습니다.')
+    }
   }
 
   // 결제 설정 저장
@@ -507,49 +528,55 @@ export default function AdminContent() {
       }
     }
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const selectedFile = e.target.files?.[0]
-      if (selectedFile) {
-        console.log('File selected:', {
-          name: selectedFile.name,
-          type: selectedFile.type,
-          size: selectedFile.size,
-          lastModified: new Date(selectedFile.lastModified).toISOString()
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (!e.target.files?.[0]) return
+
+      const file = e.target.files[0]
+      const maxSize = 10 * 1024 * 1024 // 10MB 제한
+
+      if (file.size > maxSize) {
+        alert('파일 크기는 10MB를 초과할 수 없습니다.')
+        return
+      }
+
+      try {
+        const base64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = () => resolve(reader.result as string)
+          reader.onerror = reject
+          reader.readAsDataURL(file)
         })
-        
-        // 파일 크기 제한 (10MB)
-        const maxSize = 10 * 1024 * 1024 // 10MB
-        if (selectedFile.size > maxSize) {
-          setUploadError(`파일 크기는 10MB를 초과할 수 없습니다. (현재: ${(selectedFile.size / 1024 / 1024).toFixed(1)}MB)`)
-          return
-        }
 
-        // 파일 타입 검증
-        if (!selectedFile.type.startsWith('image/') && !selectedFile.type.startsWith('video/')) {
-          setUploadError('이미지 또는 비디오 파일만 업로드 가능합니다.')
-          return
-        }
+        // 이미지 최적화 (필요한 경우)
+        if (file.type.startsWith('image/')) {
+          const img = new Image()
+          img.src = base64
+          await new Promise((resolve) => { img.onload = resolve })
 
-        // 비디오 파일 추가 검증
-        if (selectedFile.type.startsWith('video/')) {
-          const allowedVideoTypes = ['video/mp4', 'video/webm', 'video/quicktime']
-          if (!allowedVideoTypes.includes(selectedFile.type)) {
-            setUploadError('MP4, WebM, MOV 형식의 비디오만 업로드 가능합니다.')
-            return
+          const canvas = document.createElement('canvas')
+          const ctx = canvas.getContext('2d')
+          const maxWidth = 1920
+          const maxHeight = 1080
+          let width = img.width
+          let height = img.height
+
+          if (width > maxWidth || height > maxHeight) {
+            const ratio = Math.min(maxWidth / width, maxHeight / height)
+            width *= ratio
+            height *= ratio
           }
+
+          canvas.width = width
+          canvas.height = height
+          ctx?.drawImage(img, 0, 0, width, height)
+          return canvas.toDataURL(file.type, 0.8)
         }
 
-        // 이미지 파일 추가 검증
-        if (selectedFile.type.startsWith('image/')) {
-          const allowedImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
-          if (!allowedImageTypes.includes(selectedFile.type)) {
-            setUploadError('JPG, PNG, GIF, WebP 형식의 이미지만 업로드 가능합니다.')
-            return
-          }
-        }
-
-        setFile(selectedFile)
-        setUploadError(null)
+        return base64
+      } catch (error) {
+        console.error('File conversion error:', error)
+        alert('파일 변환 중 오류가 발생했습니다.')
+        return null
       }
     }
 

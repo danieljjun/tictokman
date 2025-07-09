@@ -179,8 +179,8 @@ export default function Banner() {
 
   return (
     <div 
-      className="relative w-full overflow-hidden bg-gradient-to-br from-blue-50 to-indigo-100"
-      style={{ height: `${settings.height}px` }}
+      className="relative w-full overflow-hidden bg-gradient-to-br from-blue-50 to-indigo-100 pt-16 md:pt-16"
+      style={{ height: `${settings.height + 64}px` }}
     >
       {/* 이전/다음 버튼 */}
       {settings.items.length > 1 && (
@@ -206,135 +206,46 @@ export default function Banner() {
         </>
       )}
 
-      {/* 배너 콘텐츠 */}
-      {currentItem.type === 'image' && currentItem.url !== '/banner-default.jpg' && (
-        <>
-          {currentItem.url.startsWith('data:') ? (
-            <img
-              src={currentItem.url}
-              alt={currentItem.title}
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-          ) : (
-            <Image
-              src={currentItem.url}
-              alt={currentItem.title}
-              fill
-              className="object-cover"
-            />
-          )}
-          {/* 이미지 배너 텍스트 오버레이 */}
-          {(currentItem.title || currentItem.description) && (
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent">
-              <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-                {currentItem.title && (
-                  <h2 className="text-2xl font-bold mb-2 text-white drop-shadow-lg">
-                    {currentItem.title}
-                  </h2>
-                )}
-                {currentItem.description && (
-                  <p className="text-lg text-white drop-shadow-lg whitespace-pre-line">
-                    {currentItem.description}
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-        </>
-      )}
-
-      {currentItem.type === 'video' && (
-        <>
-          {console.log('Video URL details:', {
-            url: currentItem.url,
-            isBase64: currentItem.url?.startsWith('data:'),
-            urlLength: currentItem.url?.length,
-            type: currentItem.type
-          })}
-          <div className="absolute inset-0 bg-black/20">
-            {videoLoading && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-white text-lg font-semibold drop-shadow-lg">
-                  비디오 로딩 중...
-                </div>
-              </div>
-            )}
-            {videoError && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-white text-lg font-semibold drop-shadow-lg">
-                  비디오 로드 실패: {videoError}
-                </div>
-              </div>
-            )}
-          </div>
+      {/* 배너 내용 컨테이너 */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        {currentItem.type === 'image' ? (
+          <Image
+            src={currentItem.url}
+            alt={currentItem.title}
+            fill
+            style={{ objectFit: 'cover' }}
+            priority
+          />
+        ) : (
           <video
-            key={currentItem.url}
             src={currentItem.url}
             autoPlay
-            muted
             loop
+            muted
             playsInline
-            preload="auto"
-            controls={false}
-            className="absolute inset-0 w-full h-full object-cover"
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            onLoadStart={() => setVideoLoading(true)}
+            onLoadedData={() => setVideoLoading(false)}
             onError={(e) => {
-              console.error('Video error details:', {
-                url: currentItem.url,
-                error: e.currentTarget.error?.message || 'Unknown error',
-                networkState: e.currentTarget.networkState,
-                readyState: e.currentTarget.readyState,
-                currentSrc: e.currentTarget.currentSrc,
-                isBase64: currentItem.url?.startsWith('data:')
-              })
-              setVideoError('비디오를 로드할 수 없습니다')
-              setVideoLoading(false)
-            }}
-            onLoadStart={() => {
-              console.log('Video loading started:', {
-                url: currentItem.url,
-                time: new Date().toISOString(),
-                isBase64: currentItem.url?.startsWith('data:')
-              })
-              setVideoLoading(true)
-              setVideoError(null)
-            }}
-            onLoadedData={() => {
-              console.log('Video data loaded:', {
-                url: currentItem.url,
-                time: new Date().toISOString(),
-                isBase64: currentItem.url?.startsWith('data:'),
-                size: currentItem.url?.length
-              })
-              setVideoLoading(false)
-            }}
-            onCanPlay={() => {
-              console.log('Video can play:', {
-                url: currentItem.url,
-                time: new Date().toISOString(),
-                isBase64: currentItem.url?.startsWith('data:')
-              })
+              console.error('Video error:', e)
+              setVideoError('비디오를 불러오는데 실패했습니다.')
               setVideoLoading(false)
             }}
           />
-          {/* 비디오 배너 텍스트 오버레이 */}
-          {(currentItem.title || currentItem.description) && (
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent pointer-events-none">
-              <div className="absolute bottom-0 left-0 right-0 p-6">
-                {currentItem.title && (
-                  <h2 className="text-2xl font-bold mb-2 text-white drop-shadow-lg">
-                    {currentItem.title}
-                  </h2>
-                )}
-                {currentItem.description && (
-                  <p className="text-lg text-white drop-shadow-lg whitespace-pre-line">
-                    {currentItem.description}
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-        </>
-      )}
+        )}
+      </div>
+
+      {/* 배너 텍스트 오버레이 */}
+      <div className="absolute inset-0 bg-black bg-opacity-30">
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
+          <h2 className="text-4xl md:text-5xl font-bold text-white mb-4 drop-shadow-lg">
+            {currentItem.title}
+          </h2>
+          <p className="text-xl md:text-2xl text-white drop-shadow-lg">
+            {currentItem.description}
+          </p>
+        </div>
+      </div>
 
       {/* 배너 텍스트 */}
       <div className={`absolute inset-0 flex items-center justify-center ${
