@@ -417,9 +417,9 @@ export default function AdminContent() {
         const title = formData.get('title') as string
         const description = formData.get('description') as string
 
-        // 최소한 하나의 필드는 입력되어야 함
-        if ((!file || file.size === 0) && !title.trim() && !description.trim()) {
-          throw new Error('파일, 제목, 설명 중 하나 이상을 입력해주세요.')
+        // 파일이 있으면 업로드 가능 (제목, 설명은 선택사항)
+        if (!file || file.size === 0) {
+          throw new Error('파일을 선택해주세요.')
         }
 
         let bannerUrl = ''
