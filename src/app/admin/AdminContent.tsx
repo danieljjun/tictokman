@@ -263,6 +263,9 @@ export default function AdminContent() {
       newValue: JSON.stringify(tempBannerSettings)
     }))
     
+    // 커스텀 이벤트를 트리거하여 같은 탭에서도 업데이트되도록 함
+    window.dispatchEvent(new CustomEvent('bannerSettingsUpdated'))
+    
     alert('배너 설정이 저장되었습니다.')
   }
 
@@ -308,6 +311,9 @@ export default function AdminContent() {
         newValue: settingsToSave
       }))
       
+      // 커스텀 이벤트를 트리거하여 같은 탭에서도 업데이트되도록 함
+      window.dispatchEvent(new CustomEvent('bannerSettingsUpdated'))
+      
       // 저장 확인
       const savedData = localStorage.getItem('bannerSettings')
       if (savedData) {
@@ -340,6 +346,9 @@ export default function AdminContent() {
       key: 'bannerSettings',
       newValue: JSON.stringify(updatedSettings)
     }))
+    
+    // 커스텀 이벤트를 트리거하여 같은 탭에서도 업데이트되도록 함
+    window.dispatchEvent(new CustomEvent('bannerSettingsUpdated'))
   }
 
   // 배너 삭제 함수 수정
@@ -358,6 +367,9 @@ export default function AdminContent() {
       key: 'bannerSettings',
       newValue: JSON.stringify(updatedSettings)
     }))
+    
+    // 커스텀 이벤트를 트리거하여 같은 탭에서도 업데이트되도록 함
+    window.dispatchEvent(new CustomEvent('bannerSettingsUpdated'))
   }
 
   // 결제 프로그램 추가

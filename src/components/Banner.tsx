@@ -82,7 +82,7 @@ export default function Banner() {
 
     loadSettings()
 
-    // storage 이벤트 리스너 추가
+    // storage 이벤트 리스너 추가 (다른 탭에서의 변경 감지)
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'bannerSettings') {
         console.log('Storage changed, reloading banner settings')
@@ -91,10 +91,18 @@ export default function Banner() {
       }
     }
 
+    // 커스텀 이벤트 리스너 추가 (같은 탭에서의 변경 감지)
+    const handleBannerUpdate = () => {
+      console.log('Banner update event received, reloading settings')
+      loadSettings()
+    }
+
     window.addEventListener('storage', handleStorageChange)
+    window.addEventListener('bannerSettingsUpdated', handleBannerUpdate)
 
     return () => {
       window.removeEventListener('storage', handleStorageChange)
+      window.removeEventListener('bannerSettingsUpdated', handleBannerUpdate)
     }
   }, [])
 
