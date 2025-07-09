@@ -256,6 +256,13 @@ export default function AdminContent() {
   const saveBannerSettings = () => {
     setBannerSettings(tempBannerSettings)
     localStorage.setItem('bannerSettings', JSON.stringify(tempBannerSettings))
+    
+    // localStorage 이벤트를 트리거하여 다른 탭에서도 업데이트되도록 함
+    window.dispatchEvent(new StorageEvent('storage', {
+      key: 'bannerSettings',
+      newValue: JSON.stringify(tempBannerSettings)
+    }))
+    
     alert('배너 설정이 저장되었습니다.')
   }
 
@@ -295,6 +302,12 @@ export default function AdminContent() {
       console.log('Banner saved to localStorage successfully')
       console.log('Saved data:', settingsToSave)
       
+      // localStorage 이벤트를 트리거하여 다른 탭에서도 업데이트되도록 함
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: 'bannerSettings',
+        newValue: settingsToSave
+      }))
+      
       // 저장 확인
       const savedData = localStorage.getItem('bannerSettings')
       if (savedData) {
@@ -321,6 +334,12 @@ export default function AdminContent() {
     setTempBannerSettings(updatedSettings)
     setBannerSettings(updatedSettings)
     localStorage.setItem('bannerSettings', JSON.stringify(updatedSettings))
+    
+    // localStorage 이벤트를 트리거하여 다른 탭에서도 업데이트되도록 함
+    window.dispatchEvent(new StorageEvent('storage', {
+      key: 'bannerSettings',
+      newValue: JSON.stringify(updatedSettings)
+    }))
   }
 
   // 배너 삭제 함수 수정
@@ -333,6 +352,12 @@ export default function AdminContent() {
     setTempBannerSettings(updatedSettings)
     setBannerSettings(updatedSettings)
     localStorage.setItem('bannerSettings', JSON.stringify(updatedSettings))
+    
+    // localStorage 이벤트를 트리거하여 다른 탭에서도 업데이트되도록 함
+    window.dispatchEvent(new StorageEvent('storage', {
+      key: 'bannerSettings',
+      newValue: JSON.stringify(updatedSettings)
+    }))
   }
 
   // 결제 프로그램 추가

@@ -128,19 +128,25 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      // 파일을 Base64로 변환
-      const buffer = Buffer.from(await file.arrayBuffer())
-      const base64Data = buffer.toString('base64')
-      const dataUrl = `data:${fileType};base64,${base64Data}`
-      
-      console.log('File converted to Base64 successfully')
-      console.log('File size:', buffer.length, 'bytes')
-
       // Vercel 환경에서는 Base64 데이터 URL을 반환
       const isVercel = process.env.VERCEL === '1'
       
       if (isVercel) {
-        console.log('Running on Vercel - returning Base64 data URL')
+        console.log('Running on Vercel - processing file for Base64')
+        
+        // 파일을 Base64로 변환
+        const buffer = Buffer.from(await file.arrayBuffer())
+        const base64Data = buffer.toString('base64')
+        const dataUrl = `data:${fileType};base64,${base64Data}`
+        
+        console.log('File converted to Base64 successfully')
+        console.log('File size:', buffer.length, 'bytes')
+        console.log('Data URL length:', dataUrl.length)
+        
+        // Base64 URL이 너무 길면 경고
+        if (dataUrl.length > 1000000) { // 1MB 이상
+          console.warn('Large Base64 data URL detected. This may cause performance issues.')
+        }
         
         const response = {
           url: dataUrl,
@@ -151,6 +157,7 @@ export async function POST(request: NextRequest) {
         return createSuccessResponse(response)
       } else {
         // 로컬 개발 환경에서는 파일 시스템에 저장
+        const buffer = Buffer.from(await file.arrayBuffer())
         const filename = Date.now() + '-' + file.name.replace(/[^a-zA-Z0-9.]/g, '_')
         const mediaType = fileType.startsWith('image/') ? 'images' : 'videos'
         const uploadDir = join(process.cwd(), 'public', 'uploads', mediaType)

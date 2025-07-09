@@ -24,6 +24,8 @@ export default function Banner() {
     height: 500,
     items: []
   })
+  const [videoLoading, setVideoLoading] = useState(false)
+  const [videoError, setVideoError] = useState<string | null>(null)
 
   useEffect(() => {
     // localStorage에서 배너 설정 로드
@@ -109,6 +111,12 @@ export default function Banner() {
     return () => clearInterval(interval)
   }, [settings.interval, settings.items.length])
 
+  // 현재 배너가 변경될 때 비디오 로딩 상태 리셋
+  useEffect(() => {
+    setVideoLoading(false)
+    setVideoError(null)
+  }, [currentIndex])
+
   console.log('Banner component render - settings:', settings)
   console.log('Current index:', currentIndex)
   console.log('Total items:', settings.items.length)
@@ -191,19 +199,63 @@ export default function Banner() {
       {currentItem.type === 'video' && currentItem.url && (
         <>
           {console.log('Rendering video banner:', currentItem.url)}
+          {videoLoading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+              <div className="text-white text-lg">비디오 로딩 중...</div>
+            </div>
+          )}
+          {videoError && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+              <div className="text-white text-lg">비디오 로드 실패: {videoError}</div>
+            </div>
+          )}
           <video
             src={currentItem.url}
             autoPlay
             muted
             loop
             playsInline
+            preload="auto"
+            controls={false}
             className="absolute inset-0 w-full h-full object-cover"
             onError={(e) => {
               console.error('Video loading error:', e)
+              console.error('Video URL:', currentItem.url)
+              console.error('Video URL type:', typeof currentItem.url)
+              console.error('Video URL length:', currentItem.url.length)
+              console.error('Video element:', e.target)
+              setVideoError('비디오를 로드할 수 없습니다')
+              setVideoLoading(false)
             }}
-            onLoadStart={() => console.log('Video loading started')}
-            onLoadedData={() => console.log('Video data loaded successfully')}
-            onCanPlay={() => console.log('Video can play')}
+            onLoadStart={() => {
+              console.log('Video loading started for:', currentItem.url)
+              console.log('Video URL type:', typeof currentItem.url)
+              console.log('Video URL length:', currentItem.url.length)
+              setVideoLoading(true)
+              setVideoError(null)
+            }}
+            onLoadedData={() => {
+              console.log('Video data loaded successfully for:', currentItem.url)
+              setVideoLoading(false)
+            }}
+            onCanPlay={() => {
+              console.log('Video can play for:', currentItem.url)
+              setVideoLoading(false)
+            }}
+            onLoadedMetadata={() => {
+              console.log('Video metadata loaded for:', currentItem.url)
+            }}
+            onProgress={() => {
+              console.log('Video loading progress for:', currentItem.url)
+            }}
+            onAbort={() => {
+              console.log('Video loading aborted for:', currentItem.url)
+              setVideoError('비디오 로딩이 중단되었습니다')
+              setVideoLoading(false)
+            }}
+            onSuspend={() => {
+              console.log('Video loading suspended for:', currentItem.url)
+            }}
           />
         </>
       )}
