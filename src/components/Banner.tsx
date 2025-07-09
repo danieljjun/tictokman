@@ -44,31 +44,24 @@ export default function Banner() {
             if (Array.isArray(parsedSettings.items)) {
               console.log('Valid banner settings found, setting state')
               setSettings(parsedSettings)
+              return // 성공적으로 로드되었으므로 함수 종료
             } else {
               console.error('Invalid banner settings: items is not an array')
-              console.log('Falling back to default settings')
-              setSettings({
-                interval: 5000,
-                height: 500,
-                items: []
-              })
             }
           } else {
             console.error('Invalid banner settings format')
-            setSettings({
-              interval: 5000,
-              height: 500,
-              items: []
-            })
           }
         } else {
-          console.log('No saved banner settings found, using defaults')
-          setSettings({
-            interval: 5000,
-            height: 500,
-            items: []
-          })
+          console.log('No saved banner settings found')
         }
+        
+        // 기본 설정으로 폴백
+        console.log('Falling back to default settings')
+        setSettings({
+          interval: 5000,
+          height: 500,
+          items: []
+        })
       } catch (error) {
         console.error('Error loading banner settings:', error)
         console.log('Falling back to default settings due to error')
@@ -80,6 +73,7 @@ export default function Banner() {
       }
     }
 
+    // 초기 로딩
     loadSettings()
 
     // storage 이벤트 리스너 추가 (다른 탭에서의 변경 감지)
@@ -128,6 +122,7 @@ export default function Banner() {
   console.log('Banner component render - settings:', settings)
   console.log('Current index:', currentIndex)
   console.log('Total items:', settings.items.length)
+  console.log('Settings items:', settings.items)
 
   if (settings.items.length === 0) {
     console.log('No banners to display')

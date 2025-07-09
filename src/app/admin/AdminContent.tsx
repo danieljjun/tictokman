@@ -280,9 +280,9 @@ export default function AdminContent() {
   const handleAddBanner = (newBanner: BannerItem) => {
     console.log('handleAddBanner called with:', newBanner)
     
-    // 현재 실제 배너 설정을 기반으로 업데이트
-    const currentSettings = bannerSettings
-    console.log('Current banner settings:', currentSettings)
+    // 현재 임시 배너 설정을 기반으로 업데이트
+    const currentSettings = tempBannerSettings
+    console.log('Current temp banner settings:', currentSettings)
     
     // 기존 배너 목록에 새 배너 추가
     const updatedItems = [...currentSettings.items, newBanner]
