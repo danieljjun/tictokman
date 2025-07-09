@@ -278,98 +278,103 @@ export default function AdminContent() {
 
   // 새 배너 추가 시 자동 저장
   const handleAddBanner = (newBanner: BannerItem) => {
-    console.log('handleAddBanner called with:', newBanner)
+    console.log('Adding new banner:', newBanner)
     
-    // 현재 임시 배너 설정을 기반으로 업데이트
-    const currentSettings = tempBannerSettings
-    console.log('Current temp banner settings:', currentSettings)
-    
-    // 기존 배너 목록에 새 배너 추가
-    const updatedItems = [...currentSettings.items, newBanner]
+    // 임시 설정과 실제 설정 모두 업데이트
     const updatedSettings = {
-      ...currentSettings,
-      items: updatedItems
+      ...tempBannerSettings,
+      items: [...tempBannerSettings.items, newBanner]
     }
     
-    console.log('Updated settings:', updatedSettings)
-    console.log('Total banners:', updatedItems.length)
-    
-    // 상태 업데이트 (실제 설정과 임시 설정 모두)
-    setBannerSettings(updatedSettings)
     setTempBannerSettings(updatedSettings)
+    setBannerSettings(updatedSettings)
     
     // localStorage에 저장
     try {
-      const settingsToSave = JSON.stringify(updatedSettings)
-      localStorage.setItem('bannerSettings', settingsToSave)
-      console.log('Banner saved to localStorage successfully')
-      console.log('Saved data:', settingsToSave)
+      localStorage.setItem('bannerSettings', JSON.stringify(updatedSettings))
+      console.log('Banner settings saved to localStorage:', updatedSettings)
       
-      // localStorage 이벤트를 트리거하여 다른 탭에서도 업데이트되도록 함
+      // 커스텀 이벤트 발생
+      const event = new Event('bannerSettingsUpdated')
+      window.dispatchEvent(event)
+      
+      // storage 이벤트를 수동으로 트리거
       window.dispatchEvent(new StorageEvent('storage', {
         key: 'bannerSettings',
-        newValue: settingsToSave
+        newValue: JSON.stringify(updatedSettings),
+        storageArea: localStorage
       }))
-      
-      // 커스텀 이벤트를 트리거하여 같은 탭에서도 업데이트되도록 함
-      window.dispatchEvent(new CustomEvent('bannerSettingsUpdated'))
-      
-      // 저장 확인
-      const savedData = localStorage.getItem('bannerSettings')
-      if (savedData) {
-        const parsedData = JSON.parse(savedData)
-        console.log('Saved data verification:', parsedData)
-        console.log('Verification - Total banners:', parsedData.items?.length || 0)
-      } else {
-        console.error('No data found in localStorage after saving')
-      }
     } catch (error) {
-      console.error('Error saving to localStorage:', error)
+      console.error('Error saving banner settings:', error)
     }
   }
 
   // 배너 수정 함수 추가
   const handleUpdateBanner = (id: number, updatedBanner: BannerItem) => {
-    const updatedItems = tempBannerSettings.items.map(item => 
-      item.id === id ? { ...updatedBanner, id } : item
-    )
+    console.log('Updating banner:', id, updatedBanner)
+    
+    // 임시 설정과 실제 설정 모두 업데이트
     const updatedSettings = {
       ...tempBannerSettings,
-      items: updatedItems
+      items: tempBannerSettings.items.map(item =>
+        item.id === id ? updatedBanner : item
+      )
     }
+    
     setTempBannerSettings(updatedSettings)
     setBannerSettings(updatedSettings)
-    localStorage.setItem('bannerSettings', JSON.stringify(updatedSettings))
     
-    // localStorage 이벤트를 트리거하여 다른 탭에서도 업데이트되도록 함
-    window.dispatchEvent(new StorageEvent('storage', {
-      key: 'bannerSettings',
-      newValue: JSON.stringify(updatedSettings)
-    }))
-    
-    // 커스텀 이벤트를 트리거하여 같은 탭에서도 업데이트되도록 함
-    window.dispatchEvent(new CustomEvent('bannerSettingsUpdated'))
+    // localStorage에 저장
+    try {
+      localStorage.setItem('bannerSettings', JSON.stringify(updatedSettings))
+      console.log('Updated banner settings saved to localStorage:', updatedSettings)
+      
+      // 커스텀 이벤트 발생
+      const event = new Event('bannerSettingsUpdated')
+      window.dispatchEvent(event)
+      
+      // storage 이벤트를 수동으로 트리거
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: 'bannerSettings',
+        newValue: JSON.stringify(updatedSettings),
+        storageArea: localStorage
+      }))
+    } catch (error) {
+      console.error('Error saving updated banner settings:', error)
+    }
   }
 
   // 배너 삭제 함수 수정
   const handleDeleteBanner = (id: number) => {
-    const updatedItems = tempBannerSettings.items.filter(item => item.id !== id)
+    console.log('Deleting banner:', id)
+    
+    // 임시 설정과 실제 설정 모두 업데이트
     const updatedSettings = {
       ...tempBannerSettings,
-      items: updatedItems
+      items: tempBannerSettings.items.filter(item => item.id !== id)
     }
+    
     setTempBannerSettings(updatedSettings)
     setBannerSettings(updatedSettings)
-    localStorage.setItem('bannerSettings', JSON.stringify(updatedSettings))
     
-    // localStorage 이벤트를 트리거하여 다른 탭에서도 업데이트되도록 함
-    window.dispatchEvent(new StorageEvent('storage', {
-      key: 'bannerSettings',
-      newValue: JSON.stringify(updatedSettings)
-    }))
-    
-    // 커스텀 이벤트를 트리거하여 같은 탭에서도 업데이트되도록 함
-    window.dispatchEvent(new CustomEvent('bannerSettingsUpdated'))
+    // localStorage에 저장
+    try {
+      localStorage.setItem('bannerSettings', JSON.stringify(updatedSettings))
+      console.log('Banner settings after deletion saved to localStorage:', updatedSettings)
+      
+      // 커스텀 이벤트 발생
+      const event = new Event('bannerSettingsUpdated')
+      window.dispatchEvent(event)
+      
+      // storage 이벤트를 수동으로 트리거
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: 'bannerSettings',
+        newValue: JSON.stringify(updatedSettings),
+        storageArea: localStorage
+      }))
+    } catch (error) {
+      console.error('Error saving banner settings after deletion:', error)
+    }
   }
 
   // 결제 프로그램 추가
@@ -397,449 +402,222 @@ export default function AdminContent() {
 
   // 배너 관리 섹션 수정
   const BannerManagementSection = () => {
-    const [isUploading, setIsUploading] = useState(false)
+    const [file, setFile] = useState<File | null>(null)
     const [uploadError, setUploadError] = useState<string | null>(null)
-    const [editingBannerId, setEditingBannerId] = useState<number | null>(null)
-    const [editingBanner, setEditingBanner] = useState<BannerItem | null>(null)
+    const [isUploading, setIsUploading] = useState(false)
     const fileInputRef = useRef<HTMLInputElement>(null)
-    const editFileInputRef = useRef<HTMLInputElement>(null)
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault()
-      const form = e.currentTarget
-      const formData = new FormData(form)
+      setUploadError(null)
       
+      if (!file) {
+        setUploadError('파일을 선택해주세요.')
+        return
+      }
+
+      setIsUploading(true)
+      console.log('Starting file upload:', {
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        lastModified: new Date(file.lastModified).toISOString()
+      })
+
       try {
-        setIsUploading(true)
-        setUploadError(null)
+        const formData = new FormData()
+        formData.append('file', file)
 
-        const file = formData.get('file') as File
-        const title = formData.get('title') as string
-        const description = formData.get('description') as string
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData
+        })
 
-        // 파일이 있으면 업로드 가능 (제목, 설명은 선택사항)
-        if (!file || file.size === 0) {
-          throw new Error('파일을 선택해주세요.')
+        console.log('Upload response status:', response.status)
+        
+        if (!response.ok) {
+          const errorText = await response.text()
+          console.error('Upload failed:', {
+            status: response.status,
+            statusText: response.statusText,
+            error: errorText
+          })
+          
+          try {
+            const errorData = JSON.parse(errorText)
+            throw new Error(errorData.error || '파일 업로드에 실패했습니다.')
+          } catch (parseError) {
+            throw new Error(`파일 업로드 실패 (${response.status}): ${errorText || response.statusText}`)
+          }
         }
 
-        let bannerUrl = ''
-        let bannerType: 'image' | 'video' = 'image'
+        const data = await response.json()
+        console.log('Upload successful:', {
+          url: data.url?.substring(0, 50) + '...',
+          type: data.type,
+          size: data.url?.length
+        })
 
-        // 파일이 있는 경우 업로드 처리
-        if (file && file.size > 0) {
-          // 파일 크기 검증 (50MB)
-          if (file.size > 50 * 1024 * 1024) {
-            throw new Error('파일 크기는 50MB를 초과할 수 없습니다.')
-          }
-
-          // 파일 타입 검증
-          const fileType = file.type
-          if (!fileType.startsWith('image/') && !fileType.startsWith('video/')) {
-            throw new Error('이미지 또는 비디오 파일만 업로드 가능합니다.')
-          }
-
-          // 비디오 파일 검증
-          if (fileType.startsWith('video/')) {
-            const allowedVideoTypes = ['video/mp4', 'video/webm', 'video/quicktime']
-            if (!allowedVideoTypes.includes(fileType)) {
-              throw new Error('MP4, WebM, MOV 형식의 비디오만 업로드 가능합니다.')
-            }
-            bannerType = 'video'
-          }
-
-          // 이미지 파일 검증
-          if (fileType.startsWith('image/')) {
-            const allowedImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
-            if (!allowedImageTypes.includes(fileType)) {
-              throw new Error('JPG, PNG, GIF, WebP 형식의 이미지만 업로드 가능합니다.')
-            }
-            bannerType = 'image'
-          }
-
-          const uploadData = new FormData()
-          uploadData.append('file', file)
-
-          console.log('Uploading file:', {
-            name: file.name,
-            type: file.type,
-            size: file.size
-          })
-
-          const response = await fetch('/api/upload', {
-            method: 'POST',
-            body: uploadData,
-          })
-
-          console.log('Response status:', response.status)
-          console.log('Response headers:', Object.fromEntries(response.headers.entries()))
-
-          if (!response.ok) {
-            const errorText = await response.text()
-            console.error('Server error response:', errorText)
-            try {
-              const errorJson = JSON.parse(errorText)
-              throw new Error(errorJson.error || '파일 업로드에 실패했습니다.')
-            } catch (e) {
-              if (response.status === 413) {
-                throw new Error('파일 크기가 너무 큽니다. 50MB 이하의 파일을 업로드해주세요.')
-              }
-              if (response.status === 500) {
-                throw new Error('서버 내부 오류가 발생했습니다. 잠시 후 다시 시도해주세요.')
-              }
-              throw new Error('서버 오류: ' + response.status + ' ' + response.statusText)
-            }
-          }
-
-          const result = await response.json()
-          console.log('Upload response:', result)
-
-          if (!result.success) {
-            throw new Error(result.error || '파일 업로드에 실패했습니다.')
-          }
-
-          if (!result.url) {
-            throw new Error('업로드된 파일의 URL을 받지 못했습니다.')
-          }
-
-          bannerUrl = result.url
-        } else {
-          // 파일이 없는 경우 기본 배너 이미지 사용
-          bannerUrl = '/banner-default.jpg'
+        if (!data.url) {
+          throw new Error('업로드된 파일의 URL이 없습니다.')
         }
 
-        // 새 배너 생성
+        // 새 배너 아이템 생성
         const newBanner: BannerItem = {
           id: Date.now(),
-          type: bannerType,
-          url: bannerUrl,
-          title: title.trim() || '',
-          description: description.trim() || ''
+          type: file.type.startsWith('video/') ? 'video' : 'image',
+          url: data.url,
+          title: '',
+          description: ''
         }
 
-        console.log('Creating new banner:', newBanner)
-        console.log('Banner type:', bannerType)
-        console.log('Banner URL:', bannerUrl)
+        console.log('Creating new banner:', {
+          id: newBanner.id,
+          type: newBanner.type,
+          urlLength: newBanner.url.length
+        })
+        
+        // localStorage 현재 상태 확인
+        const currentSettings = localStorage.getItem('bannerSettings')
+        console.log('Current localStorage state:', {
+          hasSettings: !!currentSettings,
+          size: currentSettings?.length || 0
+        })
 
         handleAddBanner(newBanner)
-        form.reset()
+
+        // 폼 초기화
         if (fileInputRef.current) {
           fileInputRef.current.value = ''
         }
+        setFile(null)
         setUploadError(null)
-        
+
+        // 저장 확인
+        const savedSettings = localStorage.getItem('bannerSettings')
+        console.log('Verification after save:', {
+          hasSettings: !!savedSettings,
+          size: savedSettings?.length || 0
+        })
       } catch (error) {
         console.error('Upload error:', error)
-        let errorMessage = '배너 추가 중 오류가 발생했습니다.'
-        
-        if (error instanceof Error) {
-          errorMessage = error.message
-        } else if (typeof error === 'object' && error !== null) {
-          errorMessage = (error as any).error || JSON.stringify(error)
-        } else if (typeof error === 'string') {
-          errorMessage = error
-        }
-        
-        setUploadError(errorMessage)
+        setUploadError(error instanceof Error ? error.message : '파일 업로드 중 오류가 발생했습니다.')
       } finally {
         setIsUploading(false)
       }
     }
 
-    // 배너 수정 시작
-    const handleStartEdit = (banner: BannerItem) => {
-      setEditingBannerId(banner.id)
-      setEditingBanner({ ...banner })
-    }
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const selectedFile = e.target.files?.[0]
+      if (selectedFile) {
+        console.log('File selected:', {
+          name: selectedFile.name,
+          type: selectedFile.type,
+          size: selectedFile.size,
+          lastModified: new Date(selectedFile.lastModified).toISOString()
+        })
+        
+        // 파일 크기 제한 (10MB)
+        const maxSize = 10 * 1024 * 1024 // 10MB
+        if (selectedFile.size > maxSize) {
+          setUploadError(`파일 크기는 10MB를 초과할 수 없습니다. (현재: ${(selectedFile.size / 1024 / 1024).toFixed(1)}MB)`)
+          return
+        }
 
-    // 배너 수정 취소
-    const handleCancelEdit = () => {
-      setEditingBannerId(null)
-      setEditingBanner(null)
-      if (editFileInputRef.current) {
-        editFileInputRef.current.value = ''
-      }
-    }
+        // 파일 타입 검증
+        if (!selectedFile.type.startsWith('image/') && !selectedFile.type.startsWith('video/')) {
+          setUploadError('이미지 또는 비디오 파일만 업로드 가능합니다.')
+          return
+        }
 
-    // 배너 수정 저장
-    const handleSaveEdit = async (e: React.FormEvent<HTMLFormElement>) => {
-      e.preventDefault()
-      if (!editingBanner) return
+        // 비디오 파일 추가 검증
+        if (selectedFile.type.startsWith('video/')) {
+          const allowedVideoTypes = ['video/mp4', 'video/webm', 'video/quicktime']
+          if (!allowedVideoTypes.includes(selectedFile.type)) {
+            setUploadError('MP4, WebM, MOV 형식의 비디오만 업로드 가능합니다.')
+            return
+          }
+        }
 
-      const form = e.currentTarget
-      const formData = new FormData(form)
-      
-      try {
-        setIsUploading(true)
+        // 이미지 파일 추가 검증
+        if (selectedFile.type.startsWith('image/')) {
+          const allowedImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+          if (!allowedImageTypes.includes(selectedFile.type)) {
+            setUploadError('JPG, PNG, GIF, WebP 형식의 이미지만 업로드 가능합니다.')
+            return
+          }
+        }
+
+        setFile(selectedFile)
         setUploadError(null)
-
-        const file = formData.get('editFile') as File
-        const title = formData.get('editTitle') as string
-        const description = formData.get('editDescription') as string
-
-        let bannerUrl = editingBanner.url
-        let bannerType = editingBanner.type
-
-        // 파일이 있는 경우 업로드 처리
-        if (file && file.size > 0) {
-          // 파일 크기 검증 (50MB)
-          if (file.size > 50 * 1024 * 1024) {
-            throw new Error('파일 크기는 50MB를 초과할 수 없습니다.')
-          }
-
-          // 파일 타입 검증
-          const fileType = file.type
-          if (!fileType.startsWith('image/') && !fileType.startsWith('video/')) {
-            throw new Error('이미지 또는 비디오 파일만 업로드 가능합니다.')
-          }
-
-          // 비디오 파일 검증
-          if (fileType.startsWith('video/')) {
-            const allowedVideoTypes = ['video/mp4', 'video/webm', 'video/quicktime']
-            if (!allowedVideoTypes.includes(fileType)) {
-              throw new Error('MP4, WebM, MOV 형식의 비디오만 업로드 가능합니다.')
-            }
-            bannerType = 'video'
-          }
-
-          // 이미지 파일 검증
-          if (fileType.startsWith('image/')) {
-            const allowedImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
-            if (!allowedImageTypes.includes(fileType)) {
-              throw new Error('JPG, PNG, GIF, WebP 형식의 이미지만 업로드 가능합니다.')
-            }
-            bannerType = 'image'
-          }
-
-          const uploadData = new FormData()
-          uploadData.append('file', file)
-
-          const response = await fetch('/api/upload', {
-            method: 'POST',
-            body: uploadData,
-          })
-
-          if (!response.ok) {
-            const errorText = await response.text()
-            try {
-              const errorJson = JSON.parse(errorText)
-              throw new Error(errorJson.error || '파일 업로드에 실패했습니다.')
-            } catch (e) {
-              if (response.status === 413) {
-                throw new Error('파일 크기가 너무 큽니다. 50MB 이하의 파일을 업로드해주세요.')
-              }
-              if (response.status === 500) {
-                throw new Error('서버 내부 오류가 발생했습니다. 잠시 후 다시 시도해주세요.')
-              }
-              throw new Error('서버 오류: ' + response.status + ' ' + response.statusText)
-            }
-          }
-
-          const result = await response.json()
-
-          if (!result.success) {
-            throw new Error(result.error || '파일 업로드에 실패했습니다.')
-          }
-
-          if (!result.url) {
-            throw new Error('업로드된 파일의 URL을 받지 못했습니다.')
-          }
-
-          bannerUrl = result.url
-        }
-
-        // 배너 업데이트
-        const updatedBanner: BannerItem = {
-          ...editingBanner,
-          type: bannerType,
-          url: bannerUrl,
-          title: title.trim() || '',
-          description: description.trim() || ''
-        }
-
-        handleUpdateBanner(editingBanner.id, updatedBanner)
-        handleCancelEdit()
-        setUploadError(null)
-        
-      } catch (error) {
-        console.error('Edit error:', error)
-        let errorMessage = '배너 수정 중 오류가 발생했습니다.'
-        
-        if (error instanceof Error) {
-          errorMessage = error.message
-        } else if (typeof error === 'object' && error !== null) {
-          errorMessage = (error as any).error || JSON.stringify(error)
-        } else if (typeof error === 'string') {
-          errorMessage = error
-        }
-        
-        setUploadError(errorMessage)
-      } finally {
-        setIsUploading(false)
       }
     }
 
     return (
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-2xl font-bold mb-6">배너 관리</h2>
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">배너 관리</h3>
         
-        {/* 현재 배너 목록 */}
-        <div className="mb-8">
-          <h3 className="text-lg font-semibold mb-4">현재 배너 목록</h3>
-          <div className="space-y-4">
-            {tempBannerSettings.items.map((banner) => (
-              <div key={banner.id} className={`border rounded ${editingBannerId === banner.id ? 'border-blue-500 bg-blue-50' : ''}`}>
-                {editingBannerId === banner.id ? (
-                  // 수정 모드
-                  <form onSubmit={handleSaveEdit} className="p-4 space-y-4">
-                    <div className="flex justify-between items-start">
-                      <h4 className="font-medium text-blue-600">배너 수정 중</h4>
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={handleCancelEdit}
-                          className="text-gray-600 hover:text-gray-800"
-                        >
-                          취소
-                        </button>
-                        <button
-                          type="submit"
-                          disabled={isUploading}
-                          className={`text-blue-600 hover:text-blue-800 ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                        >
-                          {isUploading ? '저장 중...' : '저장'}
-                        </button>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-gray-700 text-sm font-bold mb-2">
-                        파일 변경 (선택사항)
-                      </label>
-                      <input
-                        ref={editFileInputRef}
-                        type="file"
-                        name="editFile"
-                        accept="image/*,video/*"
-                        className="w-full"
-                      />
-                      <p className="text-sm text-gray-500 mt-1">
-                        현재: {banner.type === 'video' ? '비디오' : '이미지'}
-                      </p>
-                    </div>
-
-                    <div>
-                      <label className="block text-gray-700 text-sm font-bold mb-2">
-                        제목
-                      </label>
-                      <input
-                        type="text"
-                        name="editTitle"
-                        defaultValue={banner.title}
-                        placeholder="배너 제목을 입력하세요"
-                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-gray-700 text-sm font-bold mb-2">
-                        설명
-                      </label>
-                      <textarea
-                        name="editDescription"
-                        defaultValue={banner.description}
-                        placeholder="배너 설명을 입력하세요"
-                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                        rows={3}
-                      />
-                    </div>
-                  </form>
-                ) : (
-                  // 일반 보기 모드
-                  <div className="flex items-start justify-between p-4">
-                    <div>
-                      <h4 className="font-medium">{banner.title || '(제목 없음)'}</h4>
-                      <p className="text-sm text-gray-600">{banner.description || '(설명 없음)'}</p>
-                      <p className="text-sm text-gray-500 mt-1">{banner.type === 'video' ? '비디오' : '이미지'}</p>
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleStartEdit(banner)}
-                        className="text-blue-600 hover:text-blue-800"
-                      >
-                        수정
-                      </button>
-                      <button
-                        onClick={() => handleDeleteBanner(banner.id)}
-                        className="text-red-600 hover:text-red-800"
-                      >
-                        삭제
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* 새 배너 추가 폼 */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              파일 업로드 (이미지 또는 비디오) <span className="text-gray-500 font-normal">(선택사항)</span>
+            <label className="block text-sm font-medium text-gray-700">
+              배너 이미지/비디오 업로드
             </label>
             <input
               ref={fileInputRef}
               type="file"
-              name="file"
-              accept="image/*,video/*"
-              className="w-full"
+              accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm,video/quicktime"
+              onChange={handleFileChange}
+              className="mt-1 block w-full text-sm text-gray-500
+                file:mr-4 file:py-2 file:px-4
+                file:rounded-full file:border-0
+                file:text-sm file:font-semibold
+                file:bg-blue-50 file:text-blue-700
+                hover:file:bg-blue-100"
             />
-            <p className="text-sm text-gray-500 mt-1">
-              지원 형식: JPG, PNG, GIF, WebP, MP4, WebM, MOV (최대 50MB)
-            </p>
+            {uploadError && (
+              <p className="mt-1 text-sm text-red-600">{uploadError}</p>
+            )}
           </div>
 
-          <div>
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              제목 <span className="text-gray-500 font-normal">(선택사항)</span>
-            </label>
-            <input
-              type="text"
-              name="title"
-              placeholder="배너 제목을 입력하세요"
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            />
-          </div>
-
-          <div>
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              설명 <span className="text-gray-500 font-normal">(선택사항)</span>
-            </label>
-            <textarea
-              name="description"
-              placeholder="배너 설명을 입력하세요"
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              rows={3}
-            />
-          </div>
-
-          {uploadError && (
-            <div className="text-red-600 text-sm bg-red-50 p-3 rounded">{uploadError}</div>
-          )}
-
-          <div className="flex justify-end">
-            <button
-              type="submit"
-              disabled={isUploading}
-              className={`bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ${
-                isUploading ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
-            >
-              {isUploading ? '처리 중...' : '배너 추가'}
-            </button>
-          </div>
+          <button
+            type="submit"
+            disabled={!file || isUploading}
+            className={`px-4 py-2 rounded text-white ${
+              !file || isUploading
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-blue-600 hover:bg-blue-700'
+            }`}
+          >
+            {isUploading ? '업로드 중...' : '업로드'}
+          </button>
         </form>
+
+        {/* 배너 목록 표시 */}
+        <div className="mt-8">
+          <h4 className="text-md font-medium mb-4">현재 배너 목록</h4>
+          <div className="space-y-4">
+            {tempBannerSettings.items.map((banner, index) => (
+              <div
+                key={banner.id}
+                className="p-4 border rounded-lg flex items-center justify-between"
+              >
+                <div className="flex items-center space-x-4">
+                  <span className="text-gray-500">#{index + 1}</span>
+                  <span>{banner.type === 'video' ? '비디오' : '이미지'}</span>
+                  <span className="text-sm text-gray-500 truncate max-w-md">
+                    {banner.url}
+                  </span>
+                </div>
+                <button
+                  onClick={() => handleDeleteBanner(banner.id)}
+                  className="px-3 py-1 text-sm text-red-600 hover:text-red-800"
+                >
+                  삭제
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     )
   }

@@ -37,14 +37,40 @@ export default function Banner() {
         if (savedSettings) {
           const parsedSettings = JSON.parse(savedSettings)
           console.log('Parsed banner settings:', parsedSettings)
-          console.log('Number of banners:', parsedSettings.items?.length || 0)
           
-          // 데이터 유효성 검증
+          // 데이터 유효성 검증 강화
           if (parsedSettings && typeof parsedSettings === 'object') {
             if (Array.isArray(parsedSettings.items)) {
-              console.log('Valid banner settings found, setting state')
-              setSettings(parsedSettings)
-              return // 성공적으로 로드되었으므로 함수 종료
+              // 각 아이템의 유효성 검사
+              const validItems = parsedSettings.items.filter((item: any): item is BannerItem => {
+                if (!item || typeof item !== 'object') {
+                  console.error('Invalid banner item:', item)
+                  return false
+                }
+                if (!item.type || !['image', 'video'].includes(item.type)) {
+                  console.error('Invalid banner type:', item.type)
+                  return false
+                }
+                if (!item.url) {
+                  console.error('Missing banner URL:', item)
+                  return false
+                }
+                // URL 유효성 검사
+                if (!(item.url.startsWith('/') || 
+                    item.url.startsWith('http') || 
+                    item.url.startsWith('data:'))) {
+                  console.error('Invalid banner URL format:', item.url)
+                  return false
+                }
+                return true
+              })
+
+              console.log('Valid banner items:', validItems)
+              setSettings({
+                ...parsedSettings,
+                items: validItems
+              })
+              return
             } else {
               console.error('Invalid banner settings: items is not an array')
             }
@@ -182,39 +208,67 @@ export default function Banner() {
 
       {/* 배너 콘텐츠 */}
       {currentItem.type === 'image' && currentItem.url !== '/banner-default.jpg' && (
-        currentItem.url.startsWith('data:') ? (
-          // Base64 데이터 URL인 경우
-          <img
-            src={currentItem.url}
-            alt={currentItem.title}
-            className="absolute inset-0 w-full h-full object-cover"
-          />
-        ) : (
-          // 일반 URL인 경우
-          <Image
-            src={currentItem.url}
-            alt={currentItem.title}
-            fill
-            className="object-cover"
-          />
-        )
+        <>
+          {currentItem.url.startsWith('data:') ? (
+            <img
+              src={currentItem.url}
+              alt={currentItem.title}
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          ) : (
+            <Image
+              src={currentItem.url}
+              alt={currentItem.title}
+              fill
+              className="object-cover"
+            />
+          )}
+          {/* 이미지 배너 텍스트 오버레이 */}
+          {(currentItem.title || currentItem.description) && (
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent">
+              <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+                {currentItem.title && (
+                  <h2 className="text-2xl font-bold mb-2 text-white drop-shadow-lg">
+                    {currentItem.title}
+                  </h2>
+                )}
+                {currentItem.description && (
+                  <p className="text-lg text-white drop-shadow-lg whitespace-pre-line">
+                    {currentItem.description}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+        </>
       )}
+
       {currentItem.type === 'video' && (
         <>
-          {console.log('Rendering video banner:', currentItem.url)}
-          {console.log('Video URL type:', typeof currentItem.url)}
-          {console.log('Video URL length:', currentItem.url?.length || 0)}
-          {videoLoading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-              <div className="text-white text-lg">비디오 로딩 중...</div>
-            </div>
-          )}
-          {videoError && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-              <div className="text-white text-lg">비디오 로드 실패: {videoError}</div>
-            </div>
-          )}
+          {console.log('Video URL details:', {
+            url: currentItem.url,
+            isBase64: currentItem.url?.startsWith('data:'),
+            urlLength: currentItem.url?.length,
+            type: currentItem.type
+          })}
+          <div className="absolute inset-0 bg-black/20">
+            {videoLoading && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-white text-lg font-semibold drop-shadow-lg">
+                  비디오 로딩 중...
+                </div>
+              </div>
+            )}
+            {videoError && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-white text-lg font-semibold drop-shadow-lg">
+                  비디오 로드 실패: {videoError}
+                </div>
+              </div>
+            )}
+          </div>
           <video
+            key={currentItem.url}
             src={currentItem.url}
             autoPlay
             muted
@@ -224,44 +278,61 @@ export default function Banner() {
             controls={false}
             className="absolute inset-0 w-full h-full object-cover"
             onError={(e) => {
-              console.error('Video loading error:', e)
-              console.error('Video URL:', currentItem.url)
-              console.error('Video URL type:', typeof currentItem.url)
-              console.error('Video URL length:', currentItem.url?.length || 0)
-              console.error('Video element:', e.target)
+              console.error('Video error details:', {
+                url: currentItem.url,
+                error: e.currentTarget.error?.message || 'Unknown error',
+                networkState: e.currentTarget.networkState,
+                readyState: e.currentTarget.readyState,
+                currentSrc: e.currentTarget.currentSrc,
+                isBase64: currentItem.url?.startsWith('data:')
+              })
               setVideoError('비디오를 로드할 수 없습니다')
               setVideoLoading(false)
             }}
             onLoadStart={() => {
-              console.log('Video loading started for:', currentItem.url)
-              console.log('Video URL type:', typeof currentItem.url)
-              console.log('Video URL length:', currentItem.url?.length || 0)
+              console.log('Video loading started:', {
+                url: currentItem.url,
+                time: new Date().toISOString(),
+                isBase64: currentItem.url?.startsWith('data:')
+              })
               setVideoLoading(true)
               setVideoError(null)
             }}
             onLoadedData={() => {
-              console.log('Video data loaded successfully for:', currentItem.url)
+              console.log('Video data loaded:', {
+                url: currentItem.url,
+                time: new Date().toISOString(),
+                isBase64: currentItem.url?.startsWith('data:'),
+                size: currentItem.url?.length
+              })
               setVideoLoading(false)
             }}
             onCanPlay={() => {
-              console.log('Video can play for:', currentItem.url)
+              console.log('Video can play:', {
+                url: currentItem.url,
+                time: new Date().toISOString(),
+                isBase64: currentItem.url?.startsWith('data:')
+              })
               setVideoLoading(false)
-            }}
-            onLoadedMetadata={() => {
-              console.log('Video metadata loaded for:', currentItem.url)
-            }}
-            onProgress={() => {
-              console.log('Video loading progress for:', currentItem.url)
-            }}
-            onAbort={() => {
-              console.log('Video loading aborted for:', currentItem.url)
-              setVideoError('비디오 로딩이 중단되었습니다')
-              setVideoLoading(false)
-            }}
-            onSuspend={() => {
-              console.log('Video loading suspended for:', currentItem.url)
             }}
           />
+          {/* 비디오 배너 텍스트 오버레이 */}
+          {(currentItem.title || currentItem.description) && (
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent pointer-events-none">
+              <div className="absolute bottom-0 left-0 right-0 p-6">
+                {currentItem.title && (
+                  <h2 className="text-2xl font-bold mb-2 text-white drop-shadow-lg">
+                    {currentItem.title}
+                  </h2>
+                )}
+                {currentItem.description && (
+                  <p className="text-lg text-white drop-shadow-lg whitespace-pre-line">
+                    {currentItem.description}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
         </>
       )}
 
