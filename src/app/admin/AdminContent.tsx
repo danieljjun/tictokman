@@ -264,8 +264,21 @@ export default function AdminContent() {
         return
       }
 
+      // 데이터 정규화
+      const normalizedSettings = {
+        ...tempBannerSettings,
+        items: tempBannerSettings.items.map(item => ({
+          ...item,
+          id: Number(item.id),
+          type: item.type,
+          url: item.url,
+          title: item.title || '',
+          description: item.description || ''
+        }))
+      }
+
       // Base64 데이터 크기 검사
-      const totalSize = tempBannerSettings.items.reduce((size, item) => {
+      const totalSize = normalizedSettings.items.reduce((size, item) => {
         if (item.url.startsWith('data:')) {
           return size + item.url.length
         }
@@ -281,11 +294,20 @@ export default function AdminContent() {
       }
 
       // 설정 저장
-      localStorage.setItem('bannerSettings', JSON.stringify(tempBannerSettings))
-      setBannerSettings(tempBannerSettings)
+      const settingsString = JSON.stringify(normalizedSettings)
+      localStorage.setItem('bannerSettings', settingsString)
+      setBannerSettings(normalizedSettings)
 
       // 다른 탭/기기와의 동기화를 위한 이벤트 발생
-      window.dispatchEvent(new Event('bannerSettingsUpdated'))
+      try {
+        window.dispatchEvent(new StorageEvent('storage', {
+          key: 'bannerSettings',
+          newValue: settingsString
+        }))
+        window.dispatchEvent(new Event('bannerSettingsUpdated'))
+      } catch (error) {
+        console.error('Error dispatching events:', error)
+      }
       
       console.log('Banner settings saved successfully')
       alert('배너 설정이 저장되었습니다.')
@@ -560,7 +582,7 @@ export default function AdminContent() {
         // 파일을 Base64로 변환
         const base64 = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader()
-          reader.onload = () => {
+          reader.onloadend = () => {
             const result = reader.result as string
             console.log('File converted to Base64, length:', result.length)
             resolve(result)
