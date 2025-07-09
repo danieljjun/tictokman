@@ -255,9 +255,12 @@ export default function AdminContent() {
   // 배너 설정 저장 및 자동 연동
   const saveBannerSettings = () => {
     try {
+      console.log('Saving banner settings:', tempBannerSettings)
+
       // 배너 설정 유효성 검사
       if (!tempBannerSettings || !Array.isArray(tempBannerSettings.items)) {
         console.error('Invalid banner settings format')
+        alert('배너 설정 형식이 올바르지 않습니다.')
         return
       }
 
@@ -268,6 +271,8 @@ export default function AdminContent() {
         }
         return size
       }, 0)
+
+      console.log('Total banner data size:', totalSize)
 
       // localStorage 용량 제한 (약 5MB)
       if (totalSize > 5 * 1024 * 1024) {
@@ -532,50 +537,76 @@ export default function AdminContent() {
       if (!e.target.files?.[0]) return
 
       const file = e.target.files[0]
-      const maxSize = 10 * 1024 * 1024 // 10MB 제한
+      console.log('File selected:', {
+        name: file.name,
+        type: file.type,
+        size: file.size
+      })
 
+      // 파일 크기 제한 (10MB)
+      const maxSize = 10 * 1024 * 1024
       if (file.size > maxSize) {
         alert('파일 크기는 10MB를 초과할 수 없습니다.')
-        return
+        return null
+      }
+
+      // 파일 타입 검증
+      if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
+        alert('이미지 또는 비디오 파일만 업로드 가능합니다.')
+        return null
       }
 
       try {
+        // 파일을 Base64로 변환
         const base64 = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader()
-          reader.onload = () => resolve(reader.result as string)
-          reader.onerror = reject
+          reader.onload = () => {
+            const result = reader.result as string
+            console.log('File converted to Base64, length:', result.length)
+            resolve(result)
+          }
+          reader.onerror = (error) => {
+            console.error('FileReader error:', error)
+            reject(error)
+          }
           reader.readAsDataURL(file)
         })
 
-        // 이미지 최적화 (필요한 경우)
+        // 이미지 최적화
         if (file.type.startsWith('image/')) {
-          const img = new Image()
-          img.src = base64
-          await new Promise((resolve) => { img.onload = resolve })
+          const optimizedImage = await new Promise<string>((resolve) => {
+            const img = new Image()
+            img.onload = () => {
+              const canvas = document.createElement('canvas')
+              const ctx = canvas.getContext('2d')
+              const maxWidth = 1920
+              const maxHeight = 1080
+              let { width, height } = img
 
-          const canvas = document.createElement('canvas')
-          const ctx = canvas.getContext('2d')
-          const maxWidth = 1920
-          const maxHeight = 1080
-          let width = img.width
-          let height = img.height
+              if (width > maxWidth || height > maxHeight) {
+                const ratio = Math.min(maxWidth / width, maxHeight / height)
+                width *= ratio
+                height *= ratio
+              }
 
-          if (width > maxWidth || height > maxHeight) {
-            const ratio = Math.min(maxWidth / width, maxHeight / height)
-            width *= ratio
-            height *= ratio
-          }
+              canvas.width = width
+              canvas.height = height
+              ctx?.drawImage(img, 0, 0, width, height)
+              
+              const optimized = canvas.toDataURL(file.type, 0.8)
+              console.log('Image optimized, new length:', optimized.length)
+              resolve(optimized)
+            }
+            img.src = base64
+          })
 
-          canvas.width = width
-          canvas.height = height
-          ctx?.drawImage(img, 0, 0, width, height)
-          return canvas.toDataURL(file.type, 0.8)
+          return optimizedImage
         }
 
         return base64
       } catch (error) {
-        console.error('File conversion error:', error)
-        alert('파일 변환 중 오류가 발생했습니다.')
+        console.error('File processing error:', error)
+        alert('파일 처리 중 오류가 발생했습니다.')
         return null
       }
     }

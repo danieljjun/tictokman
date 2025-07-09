@@ -1,38 +1,63 @@
+'use client'
+
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 
-// 임시 포트폴리오 데이터 (실제로는 API에서 가져올 데이터)
-const portfolioItems = [
-  {
-    id: 1,
-    title: '3개월 다이어트 성공',
-    category: '다이어트',
-    beforeImage: '/portfolio/before1.jpg',
-    afterImage: '/portfolio/after1.jpg',
-    description: '-15kg 감량 성공',
-    date: '2024-03-15'
-  },
-  {
-    id: 2,
-    title: '자세교정 프로그램',
-    category: '자세교정',
-    beforeImage: '/portfolio/before2.jpg',
-    afterImage: '/portfolio/after2.jpg',
-    description: '거북목 자세 교정',
-    date: '2024-03-10'
-  },
-  {
-    id: 3,
-    title: '벌크업 프로그램',
-    category: '벌크업',
-    beforeImage: '/portfolio/before3.jpg',
-    afterImage: '/portfolio/after3.jpg',
-    description: '+8kg 근육량 증가',
-    date: '2024-03-05'
-  }
-]
+interface Portfolio {
+  id: number
+  title: string
+  category: string
+  beforeImage: string
+  afterImage: string
+  description: string
+  date: string
+}
 
 export default function PortfolioSection() {
+  const [portfolioItems, setPortfolioItems] = useState<Portfolio[]>([])
+
+  useEffect(() => {
+    const loadPortfolio = () => {
+      try {
+        const savedPortfolio = localStorage.getItem('portfolioItems')
+        if (savedPortfolio) {
+          const parsedPortfolio = JSON.parse(savedPortfolio)
+          // 최근 3개 항목만 표시
+          setPortfolioItems(parsedPortfolio.slice(0, 3))
+        }
+      } catch (error) {
+        console.error('Error loading portfolio:', error)
+      }
+    }
+
+    loadPortfolio()
+
+    // localStorage 변경 감지
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'portfolioItems') {
+        loadPortfolio()
+      }
+    }
+
+    // 커스텀 이벤트 감지
+    const handlePortfolioUpdate = () => {
+      loadPortfolio()
+    }
+
+    window.addEventListener('storage', handleStorageChange)
+    window.addEventListener('portfolioUpdated', handlePortfolioUpdate)
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+      window.removeEventListener('portfolioUpdated', handlePortfolioUpdate)
+    }
+  }, [])
+
+  if (portfolioItems.length === 0) {
+    return null // 포트폴리오 항목이 없으면 섹션을 표시하지 않음
+  }
+
   return (
     <section className="py-16 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
