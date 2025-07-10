@@ -11,6 +11,7 @@
     "deploy": "vercel --prod"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.50.4",
     "@tosspayments/brandpay-sdk": "^1.6.3",
     "@tosspayments/payment-sdk": "^1.9.1",
     "lucide-react": "^0.525.0",
