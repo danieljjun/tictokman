@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import { settingsManager } from '@/utils/settings'
 
 interface PortfolioItem {
   id: number
@@ -23,35 +24,33 @@ export default function PortfolioPage() {
   const programs = ['전체', '다이어트', '벌크업', '자세교정', '산후관리', '웨딩 PT', '재활운동']
 
   useEffect(() => {
-    // localStorage에서 포트폴리오 데이터 로드
-    const loadPortfolios = () => {
-      const savedPortfolios = localStorage.getItem('portfolios')
-      if (savedPortfolios) {
-        const allPortfolios = JSON.parse(savedPortfolios)
-        // 최신순으로 정렬
-        const sortedPortfolios = [...allPortfolios].sort((a, b) => 
-          new Date(b.date).getTime() - new Date(a.date).getTime()
-        )
-        setPortfolios(sortedPortfolios)
-      }
-    }
+    // 서버에서 포트폴리오 데이터 로드
+    const loadPortfolios = async () => {
+      await settingsManager.loadFromServer();
+      const savedPortfolios = settingsManager.get('portfolios', []);
+      // 최신순으로 정렬
+      const sortedPortfolios = [...savedPortfolios].sort((a, b) => 
+        new Date(b.date).getTime() - new Date(a.date).getTime()
+      );
+      setPortfolios(sortedPortfolios);
+    };
 
     // 초기 로드
-    loadPortfolios()
+    loadPortfolios();
 
-    // storage 이벤트 리스너 추가
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'portfolios') {
-        loadPortfolios()
-      }
-    }
-
-    window.addEventListener('storage', handleStorageChange)
+    // settings 변경 리스너 추가
+    const unsubscribe = settingsManager.subscribe((settings) => {
+      const savedPortfolios = settings.portfolios || [];
+      const sortedPortfolios = [...savedPortfolios].sort((a, b) => 
+        new Date(b.date).getTime() - new Date(a.date).getTime()
+      );
+      setPortfolios(sortedPortfolios);
+    });
 
     return () => {
-      window.removeEventListener('storage', handleStorageChange)
-    }
-  }, [])
+      unsubscribe();
+    };
+  }, []);
 
   const filteredPortfolios = selectedProgram === '전체' 
     ? portfolios 
