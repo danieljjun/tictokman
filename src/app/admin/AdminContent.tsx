@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, FormEvent, ChangeEvent } from 'react'
 import { useRouter } from 'next/navigation'
-import { saveData, loadData } from '@/utils/storage'
+import { settingsManager } from '@/utils/settings'
 
 interface Portfolio {
   id: number
@@ -190,7 +190,7 @@ export default function AdminContent() {
 
   useEffect(() => {
     // 초기 데이터 로드
-    const savedBanner = loadData(BANNER_STORAGE_KEY, {
+    const savedBanner = settingsManager.get(BANNER_STORAGE_KEY, {
       image: '/uploads/images/default-banner.jpg',
       text: ''
     })
@@ -226,7 +226,7 @@ export default function AdminContent() {
       const newImageUrl = data.url
 
       // 데이터 저장 및 동기화
-      saveData(BANNER_STORAGE_KEY, {
+      settingsManager.set(BANNER_STORAGE_KEY, {
         image: newImageUrl,
         text: bannerText
       })
@@ -244,15 +244,14 @@ export default function AdminContent() {
     setBannerText(newText)
     
     // 데이터 저장 및 동기화
-    saveData(BANNER_STORAGE_KEY, {
+    settingsManager.set(BANNER_STORAGE_KEY, {
       image: bannerImage,
       text: newText
     })
   }
 
   const [reservations, setReservations] = useState<Reservation[]>(() => {
-    const savedReservations = localStorage.getItem('reservations')
-    return savedReservations ? JSON.parse(savedReservations) : [
+    const savedReservations = settingsManager.get('reservations', [
       {
         id: 1,
         time: '09:00',
@@ -273,12 +272,12 @@ export default function AdminContent() {
         trainer: '박트레이너',
         status: 'pending'
       }
-    ]
+    ])
+    return savedReservations
   })
 
   const [members, setMembers] = useState<Member[]>(() => {
-    const savedMembers = localStorage.getItem('members')
-    return savedMembers ? JSON.parse(savedMembers) : [
+    const savedMembers = settingsManager.get('members', [
       {
         id: 1,
         name: '김민수',
@@ -297,12 +296,12 @@ export default function AdminContent() {
         joinDate: '2024-01-05',
         status: 'active'
       }
-    ]
+    ])
+    return savedMembers
   })
 
   const [reviews, setReviews] = useState<Review[]>(() => {
-    const savedReviews = localStorage.getItem('reviews')
-    return savedReviews ? JSON.parse(savedReviews) : [
+    const savedReviews = settingsManager.get('reviews', [
       {
         id: 1,
         name: '김사라',
@@ -321,12 +320,12 @@ export default function AdminContent() {
         date: '2024-01-10',
         status: 'pending'
       }
-    ]
+    ])
+    return savedReviews
   })
 
   const [portfolios, setPortfolios] = useState<Portfolio[]>(() => {
-    const savedPortfolios = localStorage.getItem('portfolios')
-    return savedPortfolios ? JSON.parse(savedPortfolios) : [
+    const savedPortfolios = settingsManager.get('portfolios', [
       {
         id: 1,
         title: "김민지님의 다이어트 성공 스토리",
@@ -405,7 +404,8 @@ export default function AdminContent() {
         imageUrl: "/api/placeholder/300/400",
         category: "재활운동"
       }
-    ]
+    ])
+    return savedPortfolios
   })
 
   const [editingPortfolio, setEditingPortfolio] = useState<Portfolio | null>(null)
@@ -415,12 +415,12 @@ export default function AdminContent() {
 
   useEffect(() => {
     // Load base stats from localStorage if exists
-    const savedStats = localStorage.getItem('baseStats')
-    if (savedStats) {
-      const stats = JSON.parse(savedStats)
-      setBaseStats(stats)
-      setTempBaseStats(stats)
-    }
+    const savedStats = settingsManager.get('baseStats', {
+      totalReservations: 0,
+      totalRegistered: 0
+    })
+    setBaseStats(savedStats)
+    setTempBaseStats(savedStats)
   }, [])
 
   useEffect(() => {
@@ -430,13 +430,13 @@ export default function AdminContent() {
   }, [reservations])
 
   useEffect(() => {
-    localStorage.setItem('portfolios', JSON.stringify(portfolios))
+    settingsManager.set('portfolios', portfolios)
   }, [portfolios])
 
   const updateBaseStats = (field: keyof typeof baseStats, value: number) => {
     const newStats = { ...baseStats, [field]: value }
     setBaseStats(newStats)
-    localStorage.setItem('baseStats', JSON.stringify(newStats))
+    settingsManager.set('baseStats', newStats)
   }
 
   const updateTempBaseStats = (field: keyof typeof baseStats, value: number) => {
@@ -448,7 +448,7 @@ export default function AdminContent() {
 
   const saveBaseStats = () => {
     setBaseStats(tempBaseStats)
-    localStorage.setItem('baseStats', JSON.stringify(tempBaseStats))
+    settingsManager.set('baseStats', tempBaseStats)
     // 다른 탭에서 변경을 감지할 수 있도록 storage 이벤트 발생
     window.dispatchEvent(new StorageEvent('storage', {
       key: 'baseStats',
@@ -476,7 +476,7 @@ export default function AdminContent() {
     const updatedReservations = reservations.map(res => 
       res.id === id ? { ...res, status: newStatus } : res
     )
-    localStorage.setItem('reservations', JSON.stringify(updatedReservations))
+    settingsManager.set('reservations', updatedReservations)
   }
 
   const updateMemberStatus = (id: number, newStatus: 'active' | 'inactive') => {
@@ -490,7 +490,7 @@ export default function AdminContent() {
     const updatedMembers = members.map(member => 
       member.id === id ? { ...member, status: newStatus } : member
     )
-    localStorage.setItem('members', JSON.stringify(updatedMembers))
+    settingsManager.set('members', updatedMembers)
   }
 
   const updateReviewStatus = (id: number, newStatus: 'approved' | 'pending' | 'rejected') => {
@@ -504,14 +504,14 @@ export default function AdminContent() {
     const updatedReviews = reviews.map(review => 
       review.id === id ? { ...review, status: newStatus } : review
     )
-    localStorage.setItem('reviews', JSON.stringify(updatedReviews))
+    settingsManager.set('reviews', updatedReviews)
   }
 
   const deleteMember = (id: number) => {
     if (window.confirm('정말로 이 회원을 삭제하시겠습니까?')) {
       setMembers(prev => prev.filter(m => m.id !== id))
       const updatedMembers = members.filter(m => m.id !== id)
-      localStorage.setItem('members', JSON.stringify(updatedMembers))
+      settingsManager.set('members', updatedMembers)
     }
   }
 
@@ -519,7 +519,7 @@ export default function AdminContent() {
     if (window.confirm('정말로 이 리뷰를 삭제하시겠습니까?')) {
       setReviews(prev => prev.filter(r => r.id !== id))
       const updatedReviews = reviews.filter(r => r.id !== id)
-      localStorage.setItem('reviews', JSON.stringify(updatedReviews))
+      settingsManager.set('reviews', updatedReviews)
     }
   }
 
@@ -565,77 +565,108 @@ export default function AdminContent() {
     e.preventDefault()
     const form = e.target as HTMLFormElement
     const formData = new FormData(form)
-    const beforeImageFile = (form.beforeImage as HTMLInputElement).files?.[0]
-    const afterImageFile = (form.afterImage as HTMLInputElement).files?.[0]
-    
-    const beforeImageUrl = beforeImageFile ? await handlePortfolioImage(beforeImageFile) : null
-    const afterImageUrl = afterImageFile ? await handlePortfolioImage(afterImageFile) : null
-    
-    const newPortfolio: Portfolio = {
-      id: Date.now(),
-      title: formData.get('title') as string,
-      description: formData.get('description') as string,
-      program: formData.get('program') as string,
-      duration: formData.get('duration') as string,
-      results: (formData.get('results') as string).split(',').map(s => s.trim()),
-      beforeImage: beforeImageUrl || '/portfolio/default.jpg',
-      afterImage: afterImageUrl || '/portfolio/default.jpg',
-      imageUrl: beforeImageUrl || '/portfolio/default.jpg', // 대표 이미지로 before 이미지 사용
-      category: formData.get('program') as string, // 프로그램을 카테고리로 사용
-      date: new Date().toISOString().split('T')[0]
-    }
 
-    setPortfolios(prev => [...prev, newPortfolio])
-    form.reset()
+    const beforeImageFile = (form.querySelector('#beforeImage') as HTMLInputElement).files?.[0]
+    const afterImageFile = (form.querySelector('#afterImage') as HTMLInputElement).files?.[0]
+
+    try {
+      let beforeImageUrl = null
+      let afterImageUrl = null
+
+      if (beforeImageFile) {
+        beforeImageUrl = await handlePortfolioImage(beforeImageFile)
+      }
+      if (afterImageFile) {
+        afterImageUrl = await handlePortfolioImage(afterImageFile)
+      }
+
+      if (!beforeImageUrl || !afterImageUrl) {
+        setMessage('이미지 업로드에 실패했습니다.')
+        return
+      }
+
+      const newPortfolio = {
+        id: Date.now(),
+        title: formData.get('title') as string,
+        description: formData.get('description') as string,
+        program: formData.get('program') as string,
+        duration: formData.get('duration') as string,
+        results: (formData.get('results') as string).split('\n').filter(Boolean),
+        beforeImage: beforeImageUrl,
+        afterImage: afterImageUrl,
+        date: new Date().toISOString()
+      }
+
+      const existingPortfolios = await settingsManager.get('portfolios', [])
+      await settingsManager.set('portfolios', [...existingPortfolios, newPortfolio])
+      
+      form.reset()
+      setMessage('포트폴리오가 성공적으로 추가되었습니다.')
+    } catch (error) {
+      console.error('Portfolio add error:', error)
+      setMessage('포트폴리오 추가 중 오류가 발생했습니다.')
+    }
   }
 
   const updatePortfolio = async (e: FormEvent<HTMLFormElement>, id: number) => {
     e.preventDefault()
     const form = e.target as HTMLFormElement
     const formData = new FormData(form)
-    const beforeImageFile = (form.beforeImage as HTMLInputElement).files?.[0]
-    const afterImageFile = (form.afterImage as HTMLInputElement).files?.[0]
-    
-    let beforeImageUrl = null
-    let afterImageUrl = null
-    
-    if (beforeImageFile) {
-      beforeImageUrl = await handlePortfolioImage(beforeImageFile)
-    }
-    if (afterImageFile) {
-      afterImageUrl = await handlePortfolioImage(afterImageFile)
-    }
 
-    setPortfolios(prev => prev.map(p => {
-      if (p.id === id) {
-        const updatedPortfolio = {
-          ...p,
-          title: formData.get('title') as string,
-          description: formData.get('description') as string,
-          program: formData.get('program') as string,
-          duration: formData.get('duration') as string,
-          results: (formData.get('results') as string).split(',').map(s => s.trim()),
-          category: formData.get('program') as string
-        }
+    const beforeImageFile = (form.querySelector('#beforeImage') as HTMLInputElement).files?.[0]
+    const afterImageFile = (form.querySelector('#afterImage') as HTMLInputElement).files?.[0]
 
-        if (beforeImageUrl) {
-          updatedPortfolio.beforeImage = beforeImageUrl
-          updatedPortfolio.imageUrl = beforeImageUrl // 대표 이미지 업데이트
-        }
-        if (afterImageUrl) {
-          updatedPortfolio.afterImage = afterImageUrl
-        }
-
-        return updatedPortfolio
+    try {
+      const existingPortfolios = await settingsManager.get('portfolios', [])
+      const portfolioIndex = existingPortfolios.findIndex((p: Portfolio) => p.id === id)
+      
+      if (portfolioIndex === -1) {
+        setMessage('포트폴리오를 찾을 수 없습니다.')
+        return
       }
-      return p
-    }))
-    setEditingPortfolio(null)
+
+      let beforeImageUrl = existingPortfolios[portfolioIndex].beforeImage
+      let afterImageUrl = existingPortfolios[portfolioIndex].afterImage
+
+      if (beforeImageFile) {
+        const newBeforeImageUrl = await handlePortfolioImage(beforeImageFile)
+        if (newBeforeImageUrl) beforeImageUrl = newBeforeImageUrl
+      }
+      if (afterImageFile) {
+        const newAfterImageUrl = await handlePortfolioImage(afterImageFile)
+        if (newAfterImageUrl) afterImageUrl = newAfterImageUrl
+      }
+
+      const updatedPortfolio = {
+        ...existingPortfolios[portfolioIndex],
+        title: formData.get('title') as string,
+        description: formData.get('description') as string,
+        program: formData.get('program') as string,
+        duration: formData.get('duration') as string,
+        results: (formData.get('results') as string).split('\n').filter(Boolean),
+        beforeImage: beforeImageUrl,
+        afterImage: afterImageUrl,
+      }
+
+      existingPortfolios[portfolioIndex] = updatedPortfolio
+      await settingsManager.set('portfolios', existingPortfolios)
+      
+      setMessage('포트폴리오가 성공적으로 업데이트되었습니다.')
+    } catch (error) {
+      console.error('Portfolio update error:', error)
+      setMessage('포트폴리오 업데이트 중 오류가 발생했습니다.')
+    }
   }
 
-  const deletePortfolio = (id: number) => {
-    if (window.confirm('정말로 이 포트폴리오를 삭제하시겠습니까?')) {
-      setPortfolios(prev => prev.filter(p => p.id !== id))
+  const deletePortfolio = async (id: number) => {
+    try {
+      const existingPortfolios = await settingsManager.get('portfolios', [])
+      const updatedPortfolios = existingPortfolios.filter((p: Portfolio) => p.id !== id)
+      await settingsManager.set('portfolios', updatedPortfolios)
+      setMessage('포트폴리오가 성공적으로 삭제되었습니다.')
+    } catch (error) {
+      console.error('Portfolio delete error:', error)
+      setMessage('포트폴리오 삭제 중 오류가 발생했습니다.')
     }
   }
 
@@ -954,6 +985,7 @@ export default function AdminContent() {
         <input
           type="file"
           name="beforeImage"
+          id="beforeImage"
           accept="image/*"
           className="w-full"
         />
@@ -963,6 +995,7 @@ export default function AdminContent() {
         <input
           type="file"
           name="afterImage"
+          id="afterImage"
           accept="image/*"
           className="w-full"
         />
